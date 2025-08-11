@@ -1,0 +1,25 @@
+{
+  "name": "fodbold-ekspert",
+  "version": "1.0.0",
+  "description": "Professionel fodboldanalyse platform med rigtige API data",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build completed'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "keywords": [
+    "football",
+    "analysis",
+    "api",
+    "predictions",
+    "denmark",
+    "premier-league"
+  ],
+  "author": "Fodbold Ekspert",
+  "license": "MIT"
+}

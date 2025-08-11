@@ -441,6 +441,14 @@
 
         <section class="matches-section">
             <h2 class="section-title">Kommende Kampe - Næste 30 Dage</h2>
+            
+            <!-- Debug section -->
+            <div style="background: rgba(255, 255, 0, 0.1); border: 1px solid #ffd700; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                <strong>🔧 Debug Tools:</strong>
+                <button onclick="testApiDirectly()" style="background: #ffd700; color: #000; border: none; padding: 8px 16px; border-radius: 5px; margin-left: 10px; cursor: pointer;">Test API Direkte</button>
+                <button onclick="showDemoData()" style="background: #4facfe; color: #fff; border: none; padding: 8px 16px; border-radius: 5px; margin-left: 10px; cursor: pointer;">Vis Demo Data</button>
+            </div>
+            
             <div id="matchesContainer">
                 <div class="loading" style="text-align: center; padding: 40px; opacity: 0.7;">
                     🔄 Henter rigtige kampe fra API-Football...
@@ -474,28 +482,42 @@
             try {
                 console.log('🔄 Henter Premier League kampe...');
                 
-                // Fetch both leagues
+                // Test API endpoints directly
                 const [premierResponse, superligaResponse] = await Promise.all([
                     fetch('/api/matches?league=premier&days=30'),
                     fetch('/api/matches?league=superliga&days=30')
                 ]);
                 
-                if (premierResponse.ok || superligaResponse.ok) {
-                    const premierData = premierResponse.ok ? await premierResponse.json() : { matches: [] };
-                    const superligaData = superligaResponse.ok ? await superligaResponse.json() : { matches: [] };
-                    
-                    console.log('✅ Premier League kampe:', premierData.count || 0);
-                    console.log('✅ Superligaen kampe:', superligaData.count || 0);
-                    
-                    const allMatches = [
-                        ...premierData.matches.map(m => ({ ...m, league: 'premier', leagueName: 'Premier League' })),
-                        ...superligaData.matches.map(m => ({ ...m, league: 'superliga', leagueName: 'Superligaen' }))
-                    ];
-                    
+                let premierData = { matches: [] };
+                let superligaData = { matches: [] };
+                
+                if (premierResponse.ok) {
+                    premierData = await premierResponse.json();
+                    console.log('✅ Premier League response:', premierData);
+                }
+                
+                if (superligaResponse.ok) {
+                    superligaData = await superligaResponse.json();
+                    console.log('✅ Superligaen response:', superligaData);
+                }
+                
+                console.log('✅ Premier League kampe:', premierData.count || 0);
+                console.log('✅ Superligaen kampe:', superligaData.count || 0);
+                
+                const allMatches = [
+                    ...(premierData.matches || []).map(m => ({ ...m, league: 'premier', leagueName: 'Premier League' })),
+                    ...(superligaData.matches || []).map(m => ({ ...m, league: 'superliga', leagueName: 'Superligaen' }))
+                ];
+                
+                console.log('📊 Total kampe hentet:', allMatches.length);
+                
+                if (allMatches.length > 0) {
                     loadRealData(allMatches);
                 } else {
-                    throw new Error('Begge API calls fejlede');
+                    console.log('⚠️ Ingen kampe fundet i API - bruger demo data');
+                    loadDemoData();
                 }
+                
             } catch (error) {
                 console.error('⚠️ API Error, bruger demo data:', error);
                 loadDemoData();

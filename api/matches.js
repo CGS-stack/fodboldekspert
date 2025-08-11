@@ -78,15 +78,48 @@ export default async function handler(req, res) {
             console.log(`${config.name} season ${season} response:`, data.response?.length || 0, 'fixtures found');
             
             if (data.response && data.response.length > 0) {
-              // Filter to ensure correct country and league, and upcoming matches
+              console.log(`Raw API response for ${config.name}:`, data.response.map(f => ({
+                home: f.teams.home.name,
+                away: f.teams.away.name,
+                leagueId: f.league.id,
+                leagueName: f.league.name,
+                country: f.league.country,
+                date: f.fixture.date
+              })));
+              
+              // VERY STRICT filtering to eliminate Hungarian matches
               const seasonFixtures = data.response.filter(fixture => {
                 const isCorrectLeague = fixture.league.id === config.id;
                 const isCorrectCountry = fixture.league.country === config.country;
+                const isCorrectLeagueName = fixture.league.name.toLowerCase().includes(config.name.toLowerCase());
                 const matchDate = new Date(fixture.fixture.date);
                 const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
                 
-                console.log(`Match: ${fixture.teams.home.name} vs ${fixture.teams.away.name} - Date: ${fixture.fixture.date} - Status: ${fixture.fixture.status.short} - Valid: ${isCorrectLeague && isCorrectCountry && isUpcoming}`);
-                return isCorrectLeague && isCorrectCountry && isUpcoming;
+                // Extra check: Exclude Hungarian teams by name patterns
+                const homeTeam = fixture.teams.home.name.toLowerCase();
+                const awayTeam = fixture.teams.away.name.toLowerCase();
+                const isNotHungarian = !homeTeam.includes('újpest') && 
+                                     !homeTeam.includes('ferencváros') && 
+                                     !homeTeam.includes('debrecen') && 
+                                     !homeTeam.includes('honvéd') && 
+                                     !homeTeam.includes('paks') &&
+                                     !awayTeam.includes('újpest') && 
+                                     !awayTeam.includes('ferencváros') && 
+                                     !awayTeam.includes('debrecen') && 
+                                     !awayTeam.includes('honvéd') && 
+                                     !awayTeam.includes('paks');
+                
+                const isValid = isCorrectLeague && isCorrectCountry && isCorrectLeagueName && isUpcoming && isNotHungarian;
+                
+                console.log(`FILTER CHECK: ${fixture.teams.home.name} vs ${fixture.teams.away.name}`);
+                console.log(`- League ID: ${fixture.league.id} (want: ${config.id}) = ${isCorrectLeague}`);
+                console.log(`- Country: ${fixture.league.country} (want: ${config.country}) = ${isCorrectCountry}`);
+                console.log(`- League Name: ${fixture.league.name} (want: ${config.name}) = ${isCorrectLeagueName}`);
+                console.log(`- Not Hungarian: ${isNotHungarian}`);
+                console.log(`- Valid: ${isValid}`);
+                console.log('---');
+                
+                return isValid;
               });
               
               fixtures = fixtures.concat(seasonFixtures);

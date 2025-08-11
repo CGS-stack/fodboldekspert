@@ -6,250 +6,92 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  const { league = 'premier', days = 30 } = req.query;
+  
+  // Calculate date range
+  const today = new Date().toISOString().split('T')[0];
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + parseInt(days));
+  const endDateStr = endDate.toISOString().split('T')[0];
+
+  console.log(`API call for league: ${league}, from: ${today} to: ${endDateStr}`);
+
+  // League mapping with country verification
+  const leagueConfig = {
+    'premier': { id: 39, country: 'England', name: 'Premier League' },
+    'superliga': { id: 271, country: 'Denmark', name: 'Superliga' }
+  };
+
+  const config = leagueConfig[league];
+  if (!config) {
+    return res.status(400).json({ error: 'Invalid league parameter' });
+  }
+
+  if (!process.env.API_FOOTBALL_KEY || !process.env.API_FOOTBALL_HOST) {
+    console.log('Missing API credentials, using demo data');
+    return res.status(200).json({
+      matches: [],
+      message: 'Demo mode - API credentials not configured'
+    });
   }
 
   try {
-    const { league, days = 30 } = req.query;
+    const apiUrl = `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=2024&from=${today}&to=${endDateStr}&status=NS`;
     
-    // League mapping - Fixed IDs
-    const leagueIds = {
-      'premier': 39,     // Premier League (England)
-      'superliga': 271   // Danish Superliga - FIXED
-    };
-
-    const leagueId = leagueIds[league];
-    if (!leagueId) {
-      return res.status(400).json({ error: 'Invalid league parameter. Use: premier or superliga' });
-    }
-
-    // Check environment variables
-    if (!process.env.API_FOOTBALL_KEY) {
-      throw new Error('API_FOOTBALL_KEY environment variable not set');
-    }
-
-    // Calculate date range
-    const today = new Date();
-    const futureDate = new Date(today.getTime() + (parseInt(days) * 24 * 60 * 60 * 1000));
+    console.log(`Fetching ${config.name} fixtures:`, apiUrl);
     
-    const fromDate = today.toISOString().split('T')[0];
-    const toDate = futureDate.toISOString().split('T')[0];
-
-    console.log(`Fetching ${league} (ID: ${leagueId}) matches from ${fromDate} to ${toDate}`);
-
-    // Try current season (2025) first, then fallback to 2024
-    let response, data;
-    const seasons = [2025, 2024];
-    
-    for (const season of seasons) {
-      try {
-        console.log(`Trying season ${season} for league ${leagueId}`);
-        
-        // Fixed headers to match RapidAPI format
-        response = await fetch(
-          `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&from=${fromDate}&to=${toDate}&status=NS`,
-          {
-            headers: {
-              'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-              'x-rapidapi-host': process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
-            }
-          }
-        );
-
-        if (response.ok) {
-          data = await response.json();
-          console.log(`Season ${season} API response for league ${leagueId}:`, data.response?.length || 0, 'matches');
-          
-          if (data.response && data.response.length > 0) {
-            // Verify we got the right league
-            const firstMatch = data.response[0];
-            console.log(`First match: ${firstMatch.teams?.home?.name} vs ${firstMatch.teams?.away?.name} in league ${firstMatch.league?.id}`);
-            break;
-          }
-        } else {
-          const errorText = await response.text();
-          console.log(`Season ${season} failed with status ${response.status}:`, errorText);
-        }
-      } catch (seasonError) {
-        console.log(`Season ${season} failed:`, seasonError.message);
-        continue;
+    const response = await fetch(apiUrl, {
+      headers: {
+        'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
+        'x-rapidapi-host': process.env.API_FOOTBALL_HOST
       }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
     }
 
-    if (!response || !response.ok) {
-      console.log(`No data found for league ${leagueId}, creating demo matches`);
-      const demoMatches = createDemoMatches(league, fromDate, toDate);
-      
-      return res.status(200).json({
-        success: true,
-        count: demoMatches.length,
-        matches: demoMatches,
-        note: `Demo data - No API matches found for ${league} (league ID: ${leagueId})`,
-        apiInfo: {
-          leagueRequested: leagueId,
-          status: 'no_matches_found'
-        }
-      });
-    }
-
-    // Process and format data - FIXED to ensure correct league
-    const matches = data.response?.filter(fixture => {
-      // Double-check we have the right league
-      return fixture.league.id === leagueId;
-    }).map(fixture => {
-      const matchDate = new Date(fixture.fixture.date);
-      const daysUntil = Math.ceil((matchDate - new Date()) / (1000 * 60 * 60 * 1000 * 24));
-
-      return {
-        id: fixture.fixture.id,
-        homeTeam: fixture.teams.home.name,
-        awayTeam: fixture.teams.away.name,
-        homeTeamId: fixture.teams.home.id,
-        awayTeamId: fixture.teams.away.id,
-        date: fixture.fixture.date,
-        venue: fixture.fixture.venue?.name || 'TBA',
-        status: fixture.fixture.status.short,
-        round: fixture.league.round,
-        daysUntil,
-        league: league === 'premier' ? 'Premier League' : 'Superligaen',
-        leagueId: fixture.league.id  // Add for verification
-      };
-    }) || [];
-
-    // If no matches found, create some realistic demo matches
-    if (matches.length === 0) {
-      console.log('No matches found from API, creating demo matches');
-      const demoMatches = createDemoMatches(league, fromDate, toDate);
-      
-      return res.status(200).json({
-        success: true,
-        count: demoMatches.length,
-        matches: demoMatches,
-        note: 'Demo data - API returned no matches for requested period',
-        apiInfo: {
-          requestsRemaining: data?.requests?.remaining || 'unknown',
-          status: 'no_matches_found'
-        }
-      });
-    }
-
-    // Cache real data for 10 minutes
-    res.setHeader('Cache-Control', 's-maxage=600');
+    const data = await response.json();
+    console.log(`${config.name} API response:`, data.results, 'fixtures found');
     
-    res.status(200).json({
-      success: true,
-      count: matches.length,
-      matches,
-      apiInfo: {
-        requestsRemaining: data?.requests?.remaining || 'unknown',
-        status: 'success'
-      }
+    // Filter to ensure correct country and league
+    const fixtures = (data.response || []).filter(fixture => {
+      const isCorrectLeague = fixture.league.id === config.id;
+      const isCorrectCountry = fixture.league.country === config.country;
+      console.log(`Match: ${fixture.teams.home.name} vs ${fixture.teams.away.name} - League: ${fixture.league.name} (${fixture.league.country}) - Valid: ${isCorrectLeague && isCorrectCountry}`);
+      return isCorrectLeague && isCorrectCountry;
+    });
+
+    // Transform to our format
+    const matches = fixtures.slice(0, 10).map(fixture => ({
+      id: fixture.fixture.id,
+      date: fixture.fixture.date,
+      homeTeam: fixture.teams.home.name,
+      awayTeam: fixture.teams.away.name,
+      venue: fixture.fixture.venue.name,
+      round: fixture.league.round,
+      league: config.name,
+      country: config.country
+    }));
+
+    console.log(`Processed ${matches.length} ${config.name} matches`);
+
+    return res.status(200).json({
+      matches: matches,
+      league: config.name,
+      total: matches.length
     });
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error(`Error fetching ${config.name} fixtures:`, error.message);
     
-    // Return demo data as fallback
-    const { league } = req.query;
-    const today = new Date();
-    const futureDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
-    
-    const demoMatches = createDemoMatches(league || 'premier', 
-      today.toISOString().split('T')[0], 
-      futureDate.toISOString().split('T')[0]
-    );
-    
-    res.status(200).json({
-      success: true,
-      count: demoMatches.length,
-      matches: demoMatches,
-      error: 'API failed, using demo data',
-      message: error.message,
-      apiInfo: {
-        status: 'fallback_demo'
-      }
+    return res.status(200).json({
+      matches: [],
+      error: error.message,
+      league: config.name
     });
-  }
-}
-
-function createDemoMatches(league, fromDate, toDate) {
-  const today = new Date();
-  
-  if (league === 'premier') {
-    return [
-      {
-        id: 'demo_pl_1',
-        homeTeam: 'Liverpool',
-        awayTeam: 'Manchester United',
-        homeTeamId: 40,
-        awayTeamId: 33,
-        date: new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'Anfield',
-        status: 'NS',
-        round: 'Regular Season - 22',
-        daysUntil: 1,
-        league: 'Premier League'
-      },
-      {
-        id: 'demo_pl_2',
-        homeTeam: 'Arsenal',
-        awayTeam: 'Chelsea',
-        homeTeamId: 42,
-        awayTeamId: 49,
-        date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'Emirates Stadium',
-        status: 'NS',
-        round: 'Regular Season - 22',
-        daysUntil: 3,
-        league: 'Premier League'
-      },
-      {
-        id: 'demo_pl_3',
-        homeTeam: 'Manchester City',
-        awayTeam: 'Tottenham Hotspur',
-        homeTeamId: 50,
-        awayTeamId: 47,
-        date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'Etihad Stadium',
-        status: 'NS',
-        round: 'Regular Season - 22',
-        daysUntil: 5,
-        league: 'Premier League'
-      }
-    ];
-  } else {
-    return [
-      {
-        id: 'demo_sl_1',
-        homeTeam: 'FC København',
-        awayTeam: 'Brøndby IF',
-        homeTeamId: 2905,
-        awayTeamId: 2999,
-        date: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'Parken Stadium',
-        status: 'NS',
-        round: 'Regular Season - 19',
-        daysUntil: 2,
-        league: 'Superligaen'
-      },
-      {
-        id: 'demo_sl_2',
-        homeTeam: 'FC Midtjylland',
-        awayTeam: 'AGF',
-        homeTeamId: 2998,
-        awayTeamId: 3000,
-        date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'MCH Arena',
-        status: 'NS',
-        round: 'Regular Season - 19',
-        daysUntil: 4,
-        league: 'Superligaen'
-      }
-    ];
   }
 }

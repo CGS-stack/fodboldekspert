@@ -87,39 +87,46 @@ export default async function handler(req, res) {
                 date: f.fixture.date
               })));
               
-              // VERY STRICT filtering to eliminate Hungarian matches
+              // STRICT filtering: Only allow known Danish teams
+              const knownDanishTeams = [
+                'fc københavn', 'fc kopenhagen', 'copenhagen',
+                'fc midtjylland', 'midtjylland',
+                'brøndby', 'brondby', 'brøndby if',
+                'agf', 'agf aarhus', 'aarhus',
+                'silkeborg', 'silkeborg if',
+                'fc nordsjælland', 'nordsjaelland', 'nordsjælland',
+                'randers', 'randers fc',
+                'viborg', 'viborg ff',
+                'ob', 'ob odense', 'odense',
+                'aab', 'aalborg', 'aab aalborg',
+                'vejle', 'vejle bk',
+                'sønderjyske', 'sonderjyske', 'sønderjyskE'
+              ];
+              
               const seasonFixtures = data.response.filter(fixture => {
+                const homeTeam = fixture.teams.home.name.toLowerCase();
+                const awayTeam = fixture.teams.away.name.toLowerCase();
+                
+                // Check if BOTH teams are known Danish teams
+                const isHomeDanish = knownDanishTeams.some(team => 
+                  homeTeam.includes(team) || team.includes(homeTeam.split(' ')[0])
+                );
+                const isAwayDanish = knownDanishTeams.some(team => 
+                  awayTeam.includes(team) || team.includes(awayTeam.split(' ')[0])
+                );
+                
                 const isCorrectLeague = fixture.league.id === config.id;
                 const isCorrectCountry = fixture.league.country === config.country;
-                const isCorrectLeagueName = fixture.league.name.toLowerCase().includes(config.name.toLowerCase());
                 const matchDate = new Date(fixture.fixture.date);
                 const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
                 
-                // Extra check: Exclude Hungarian teams by name patterns
-                const homeTeam = fixture.teams.home.name.toLowerCase();
-                const awayTeam = fixture.teams.away.name.toLowerCase();
-                const isNotHungarian = !homeTeam.includes('újpest') && 
-                                     !homeTeam.includes('ferencváros') && 
-                                     !homeTeam.includes('debrecen') && 
-                                     !homeTeam.includes('honvéd') && 
-                                     !homeTeam.includes('paks') &&
-                                     !awayTeam.includes('újpest') && 
-                                     !awayTeam.includes('ferencváros') && 
-                                     !awayTeam.includes('debrecen') && 
-                                     !awayTeam.includes('honvéd') && 
-                                     !awayTeam.includes('paks');
+                const isValidDanishMatch = isCorrectLeague && isCorrectCountry && isUpcoming && isHomeDanish && isAwayDanish;
                 
-                const isValid = isCorrectLeague && isCorrectCountry && isCorrectLeagueName && isUpcoming && isNotHungarian;
+                console.log(`DANISH FILTER: ${fixture.teams.home.name} vs ${fixture.teams.away.name}`);
+                console.log(`- Home Danish: ${isHomeDanish}, Away Danish: ${isAwayDanish}`);
+                console.log(`- Valid: ${isValidDanishMatch}`);
                 
-                console.log(`FILTER CHECK: ${fixture.teams.home.name} vs ${fixture.teams.away.name}`);
-                console.log(`- League ID: ${fixture.league.id} (want: ${config.id}) = ${isCorrectLeague}`);
-                console.log(`- Country: ${fixture.league.country} (want: ${config.country}) = ${isCorrectCountry}`);
-                console.log(`- League Name: ${fixture.league.name} (want: ${config.name}) = ${isCorrectLeagueName}`);
-                console.log(`- Not Hungarian: ${isNotHungarian}`);
-                console.log(`- Valid: ${isValid}`);
-                console.log('---');
-                
-                return isValid;
+                return isValidDanishMatch;
               });
               
               fixtures = fixtures.concat(seasonFixtures);
@@ -164,7 +171,7 @@ export default async function handler(req, res) {
           }
         }
         
-        // Fallback to known teams if API doesn't work
+        // Fallback to known Danish teams if API doesn't work
         if (danishTeams.length === 0) {
           danishTeams = [
             { name: 'FC København', venue: 'Parken' },
@@ -180,33 +187,21 @@ export default async function handler(req, res) {
             { name: 'Vejle BK', venue: 'Vejle Stadion' },
             { name: 'SønderjyskE', venue: 'Sydbank Park' }
           ];
-          console.log('Using fallback Danish teams list');
+          console.log('Using DANISH fallback teams list - NO HUNGARIAN TEAMS!');
         }
         
-        // Create realistic matchups
-        const matchups = [];
-        const usedTeams = new Set();
+        // Create GUARANTEED Danish matchups (no random selection to avoid confusion)
+        const guaranteedDanishMatchups = [
+          { home: 'FC København', away: 'Brøndby IF', venue: 'Parken' },
+          { home: 'FC Midtjylland', away: 'AGF Aarhus', venue: 'MCH Arena' },
+          { home: 'Silkeborg IF', away: 'FC Nordsjælland', venue: 'JYSK Park' },
+          { home: 'Randers FC', away: 'Viborg FF', venue: 'Cepheus Park Randers' },
+          { home: 'OB Odense', away: 'AaB Aalborg', venue: 'Nature Energy Park' },
+          { home: 'Vejle BK', away: 'SønderjyskE', venue: 'Vejle Stadion' }
+        ];
         
-        // Create 6-8 realistic fixtures
-        while (matchups.length < 8 && usedTeams.size < danishTeams.length - 1) {
-          const availableTeams = danishTeams.filter(team => !usedTeams.has(team.name));
-          if (availableTeams.length < 2) break;
-          
-          const homeTeam = availableTeams[Math.floor(Math.random() * availableTeams.length)];
-          const awayTeam = availableTeams.filter(t => t.name !== homeTeam.name)[Math.floor(Math.random() * (availableTeams.length - 1))];
-          
-          matchups.push({
-            home: homeTeam.name,
-            away: awayTeam.name,
-            venue: homeTeam.venue
-          });
-          
-          usedTeams.add(homeTeam.name);
-          usedTeams.add(awayTeam.name);
-        }
-        
-        // Convert to fixture format
-        fixtures = matchups.map((match, index) => ({
+        // Convert to fixture format - GUARANTEE DANISH TEAMS ONLY
+        fixtures = guaranteedDanishMatchups.map((match, index) => ({
           fixture: {
             id: 999000 + index,
             date: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000 + Math.random() * 12 * 60 * 60 * 1000).toISOString(),

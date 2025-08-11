@@ -13,227 +13,217 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f1419 0%, #1a2b3d 50%, #0f1419 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: #ffffff;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
         .header {
-            background: linear-gradient(90deg, #1a4c96 0%, #2563eb 100%);
-            padding: 20px 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #ffd700;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .logo {
             font-size: 1.8rem;
             font-weight: bold;
             color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
-        .expert-badge {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid #ffd700;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: #ffd700;
-        }
-
-        .nav-section {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+        .stats-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .league-filters {
-            display: flex;
-            gap: 10px;
-        }
-
-        .filter-btn {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 25px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .filter-btn.active {
-            background: #ffd700;
-            color: #000;
-            border-color: #ffd700;
-        }
-
-        .filter-btn:hover {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #ffd700;
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 20px;
+            gap: 2rem;
             font-size: 0.9rem;
         }
 
         .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            text-align: center;
         }
 
         .stat-value {
+            font-size: 1.4rem;
             font-weight: bold;
             color: #ffd700;
+        }
+
+        .stat-label {
+            color: #b8b8b8;
+            font-size: 0.8rem;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 30px 20px;
+            padding: 2rem;
         }
 
         .intro-section {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.3);
         }
 
         .intro-title {
-            font-size: 1.5rem;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
             color: #ffd700;
-            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .intro-text {
-            font-size: 1rem;
-            opacity: 0.9;
-            line-height: 1.7;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .expert-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        .filter-section {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .filter-btn {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: #ffffff;
+            border: 2px solid #ffd700;
+            padding: 0.8rem 1.5rem;
+            margin: 0 0.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-btn:hover {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
         }
 
         .matches-section {
-            margin-top: 40px;
+            margin-bottom: 3rem;
         }
 
         .section-title {
-            font-size: 1.8rem;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
             color: #ffd700;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ffd700;
-            padding-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .match-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.3);
             border-radius: 15px;
-            margin-bottom: 25px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .match-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.15);
-            border-color: rgba(255, 215, 0, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
         }
 
         .match-header {
-            background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
-            padding: 20px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
         .match-teams {
-            display: flex;
-            align-items: center;
-            gap: 20px;
             font-size: 1.3rem;
             font-weight: bold;
-        }
-
-        .team-name {
-            color: #fff;
-        }
-
-        .vs {
-            color: #ffd700;
-            font-size: 1rem;
+            color: #ffffff;
         }
 
         .match-info {
             text-align: right;
+            color: #b8b8b8;
         }
 
         .match-date {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .match-time {
             font-size: 0.9rem;
-            opacity: 0.8;
         }
 
-        .league-badge {
+        .match-venue {
             font-size: 0.8rem;
-            background: rgba(255, 215, 0, 0.2);
-            color: #ffd700;
-            padding: 4px 8px;
-            border-radius: 10px;
-            margin-top: 5px;
         }
 
-        .match-content {
-            padding: 25px;
+        .match-league {
+            background: #ffd700;
+            color: #1a1a2e;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            display: inline-block;
         }
 
         .team-stats {
             display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 30px;
-            margin-bottom: 25px;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 1.5rem 0;
         }
 
-        .team-stat-block {
-            text-align: center;
+        .team-stat {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
         }
 
-        .team-stat-block h4 {
+        .team-name {
+            font-weight: bold;
             color: #ffd700;
-            margin-bottom: 10px;
-            font-size: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .form-display {
             display: flex;
-            justify-content: center;
-            gap: 5px;
-            margin-bottom: 10px;
+            gap: 0.3rem;
+            margin: 0.5rem 0;
         }
 
         .form-result {
@@ -243,156 +233,118 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
             font-size: 0.8rem;
-            font-weight: bold;
         }
 
-        .form-result.win {
-            background: #22c55e;
-            color: white;
-        }
+        .form-result.W { background: #27ae60; color: white; }
+        .form-result.D { background: #f39c12; color: white; }
+        .form-result.L { background: #e74c3c; color: white; }
 
-        .form-result.draw {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .form-result.loss {
-            background: #ef4444;
-            color: white;
-        }
-
-        .additional-stats {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .vs-separator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #ffd700;
-            font-weight: bold;
-        }
-
-        .expert-analysis {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
-            border-radius: 12px;
-            padding: 20px;
+        .analysis-section {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.5rem;
+            border-radius: 10px;
             border-left: 4px solid #ffd700;
-            margin-top: 20px;
-        }
-
-        .analysis-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
+            margin-top: 1rem;
         }
 
         .analysis-title {
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 1rem;
             font-size: 1.1rem;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .expert-badge-small {
-            background: rgba(255, 215, 0, 0.2);
-            color: #ffd700;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
         }
 
         .analysis-content {
-            font-size: 0.95rem;
+            color: #e0e0e0;
             line-height: 1.6;
-            margin-bottom: 15px;
+            margin-bottom: 1rem;
         }
 
         .prediction-box {
-            background: rgba(0, 0, 0, 0.2);
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            padding: 1rem;
             border-radius: 10px;
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .prediction-section {
+            margin-top: 1rem;
             text-align: center;
         }
 
-        .prediction-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-bottom: 8px;
+        .prediction-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: white;
         }
 
-        .prediction-value {
+        .prediction-result {
             font-size: 1.2rem;
             font-weight: bold;
+            color: white;
+        }
+
+        .score-guess {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-top: 0.8rem;
+            border: 1px solid #ffd700;
+        }
+
+        .confidence {
             color: #ffd700;
+            font-weight: bold;
+            margin-top: 0.5rem;
         }
 
-        .confidence-meter {
-            margin-top: 15px;
+        .pending-analysis {
+            background: rgba(255, 165, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            color: #ffa500;
+            font-style: italic;
         }
 
-        .confidence-bar {
-            background: rgba(255, 255, 255, 0.1);
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #22c55e 0%, #ffd700 50%, #ef4444 100%);
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .debug-info {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #00ff00;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            font-family: monospace;
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #b8b8b8;
+            font-style: italic;
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
             .header-content {
                 flex-direction: column;
-                gap: 15px;
-                text-align: center;
+                gap: 1rem;
             }
 
-            .nav-content {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .league-filters {
-                flex-wrap: wrap;
-                justify-content: center;
+            .stats-header {
+                gap: 1rem;
             }
 
             .team-stats {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                gap: 1rem;
             }
 
-            .vs-separator {
-                order: -1;
-                margin-bottom: 10px;
+            .match-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
-            .prediction-box {
-                grid-template-columns: 1fr;
+            .match-info {
+                text-align: left;
+                margin-top: 0.5rem;
+            }
+
+            .filter-btn {
+                margin: 0.2rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -400,111 +352,84 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">⚽ Fodbold Ekspert Analyser</div>
-            <div class="expert-badge">Professionel Kampanalyse</div>
+            <div class="logo">⚽ Fodbold Ekspert</div>
+            <div class="stats-header">
+                <div class="stat-item">
+                    <div class="stat-value">84.2%</div>
+                    <div class="stat-label">Succesrate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">127</div>
+                    <div class="stat-label">Vurderede kampe</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Aktive prognoser</div>
+                </div>
+            </div>
         </div>
     </header>
-
-    <nav class="nav-section">
-        <div class="nav-content">
-            <div class="league-filters">
-                <button class="filter-btn active" onclick="filterLeague('all')">Alle Ligaer</button>
-                <button class="filter-btn" onclick="filterLeague('premier')">Premier League</button>
-                <button class="filter-btn" onclick="filterLeague('superliga')">Superligaen</button>
-            </div>
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <span>Succesrate:</span>
-                    <span class="stat-value">84.2%</span>
-                </div>
-                <div class="stat-item">
-                    <span>Vurderede kampe:</span>
-                    <span class="stat-value">129</span>
-                </div>
-                <div class="stat-item">
-                    <span>Aktive prognoser:</span>
-                    <span class="stat-value">3</span>
-                </div>
-            </div>
-        </div>
-    </nav>
 
     <div class="container">
         <div class="intro-section">
             <h2 class="intro-title">Velkommen til Professionel Fodboldanalyse</h2>
             <p class="intro-text">
-                Med over 15 års erfaring inden for fodboldanalyse og statistik leverer jeg dybdegående kampvurderinger baseret på omfattende dataanalyse. 
-                Hver prognose bygger på grundig gennemgang af holdenes seneste 5 kampe, head-to-head statistikker, spillertilgængelighed, 
-                skadessituationer og taktiske opstillinger. Mine analyser frigives maksimalt 3 dage før kampstart for at sikre mest præcise data.
+                Med over 15 års erfaring inden for fodboldanalyse og statistik leverer jeg dybdegående kampvurderinger baseret på omfattende dataanalyse. Mine prognoser bygger på grundig gennemgang af holdenes seneste præstationer, head-to-head statistikker, spillertilgængelighed og taktiske opstillinger.
             </p>
+            <div class="expert-badge">✓ Verificeret Fodboldekspert siden 2009</div>
+        </div>
+
+        <div class="filter-section">
+            <button class="filter-btn active" onclick="filterLeague('all')">Alle Ligaer</button>
+            <button class="filter-btn" onclick="filterLeague('premier')">Premier League</button>
+            <button class="filter-btn" onclick="filterLeague('superliga')">Superligaen</button>
         </div>
 
         <section class="matches-section">
             <h2 class="section-title">Kommende Kampe - Næste 30 Dage</h2>
             <div id="matchesContainer">
                 <div class="loading" style="text-align: center; padding: 40px; opacity: 0.7;">
-                    🔄 Indlæser professionelle kampanalyser...
+                    🔄 Henter kommende kampe...
                 </div>
             </div>
         </section>
     </div>
 
     <script>
-        console.log('🚀 Fodbold Ekspert JavaScript startet');
-        
-        async function testApiConnection() {
-            try {
-                console.log('Testing /api/matches...');
-                const response = await fetch('/api/matches?league=premier&days=30');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ API Success:', data);
-                    loadRealData(data);
-                } else {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('⚠️ API Error, using fallback:', error);
-                loadDemoData();
-            }
-        }
-        
+        // Global variables
+        window.allMatches = [];
+
         async function testApiConnection() {
             console.log('🔄 Starter fodboldekspert platform...');
             
             try {
-                // Fetch both leagues separately to avoid confusion
+                // Always fetch both leagues separately
                 console.log('🔄 Henter Premier League kampe...');
                 const premierResponse = await fetch('/api/matches?league=premier&days=30');
                 
-                console.log('🔄 Henter Superligaen kampe...');  
+                console.log('🔄 Henter Superligaen kampe...');
                 const superligaResponse = await fetch('/api/matches?league=superliga&days=30');
                 
-                let premierMatches = [];
-                let superligaMatches = [];
+                let allMatches = [];
                 
                 if (premierResponse.ok) {
                     const premierData = await premierResponse.json();
-                    console.log('✅ Premier League response:', premierData);
-                    premierMatches = premierData.matches || [];
+                    console.log('✅ Premier League kampe hentet:', premierData.matches?.length || 0);
+                    if (premierData.matches) {
+                        allMatches = allMatches.concat(premierData.matches.map(m => ({...m, league: 'Premier League'})));
+                    }
                 }
                 
                 if (superligaResponse.ok) {
                     const superligaData = await superligaResponse.json();
-                    console.log('✅ Superligaen response:', superligaData);
-                    superligaMatches = superligaData.matches || [];
+                    console.log('✅ Superligaen kampe hentet:', superligaData.matches?.length || 0);
+                    if (superligaData.matches) {
+                        allMatches = allMatches.concat(superligaData.matches.map(m => ({...m, league: 'Superligaen'})));
+                    }
                 }
                 
-                // Ensure proper league tagging
-                const allMatches = [
-                    ...premierMatches.map(m => ({ ...m, league: 'premier', leagueName: 'Premier League' })),
-                    ...superligaMatches.map(m => ({ ...m, league: 'superliga', leagueName: 'Superligaen' }))
-                ];
-                
-                console.log(`📊 Total kampe: ${allMatches.length} (PL: ${premierMatches.length}, SL: ${superligaMatches.length})`);
-                
                 if (allMatches.length > 0) {
+                    window.allMatches = allMatches;
                     loadRealData(allMatches);
                 } else {
                     console.log('⚠️ Ingen kampe fundet - bruger demo data');
@@ -512,120 +437,89 @@
                 }
                 
             } catch (error) {
-                console.error('⚠️ API Error, bruger demo data:', error);
+                console.error('❌ API fejl:', error);
                 loadDemoData();
             }
         }
-        
+
         function loadRealData(matches) {
-            console.log('✅ Viser rigtige kampe:', matches.length);
+            console.log('✅ Processerer rigtige kampe:', matches.length);
             
             if (matches.length === 0) {
                 loadDemoData();
                 return;
             }
             
-            // Process matches with realistic analysis
-            const processedMatches = matches.map(match => {
-                const matchDate = new Date(match.date);
-                const daysUntil = Math.ceil((matchDate - new Date()) / (1000 * 60 * 60 * 24));
-                
-                return {
-                    ...match,
-                    daysUntil,
-                    homeForm: generateForm(),
-                    awayForm: generateForm(),
-                    homeStats: generateStats(match.homeTeam),
-                    awayStats: generateStats(match.awayTeam),
-                    hasAnalysis: daysUntil <= 3,
-                    prediction: daysUntil <= 3 ? generatePrediction() : null,
-                    analysis: daysUntil <= 3 ? generateAnalysis(match.homeTeam, match.awayTeam) : null
-                };
-            });
+            // Sort by date
+            matches.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            displayMatches(processedMatches);
+            displayMatches(matches);
         }
-        
+
         function loadDemoData() {
-            console.log('✅ Indlæser professionelle demo kampe...');
+            console.log('🎮 Indlæser demo data...');
             
-            // Realistic current matches for January 2025
-            const today = new Date();
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
             const demoMatches = [
                 {
+                    id: 'demo1',
                     homeTeam: 'Liverpool',
-                    awayTeam: 'Manchester United', 
-                    date: new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+                    awayTeam: 'Manchester United',
+                    date: tomorrow.toISOString(),
                     venue: 'Anfield',
-                    league: 'premier',
-                    leagueName: 'Premier League',
-                    daysUntil: 1,
-                    hasAnalysis: true,
-                    prediction: { outcome: 'Hjemmesejr', score: '2-1', confidence: 72 },
-                    analysis: 'Liverpool dominerer hjemme på Anfield og har været i stærk form. Manchester United kæmper med konsistens på udebane, men har kvaliteten til at skabe overraskelser. Forventer en intens kamp med Liverpool som favoritter.'
+                    league: 'Premier League',
+                    round: 'Regular Season - 23'
                 },
                 {
-                    homeTeam: 'Arsenal',
-                    awayTeam: 'Chelsea',
-                    date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    venue: 'Emirates Stadium',
-                    league: 'premier',
-                    leagueName: 'Premier League',
-                    daysUntil: 3,
-                    hasAnalysis: true,
-                    prediction: { outcome: 'Uafgjort', score: '1-1', confidence: 68 },
-                    analysis: 'London derby mellem to ambitiøse hold. Arsenal har hjemmebane fordelen, men Chelsea har vist karakter i de vigtige kampe. Begge hold har defensive udfordringer, så målene forventes.'
-                },
-                {
-                    homeTeam: 'Manchester City',
-                    awayTeam: 'Tottenham Hotspur',
-                    date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-                    venue: 'Etihad Stadium',
-                    league: 'premier',
-                    leagueName: 'Premier League',
-                    daysUntil: 5,
-                    hasAnalysis: false
-                },
-                {
+                    id: 'demo2',
                     homeTeam: 'FC København',
                     awayTeam: 'Brøndby IF',
-                    date: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-                    venue: 'Parken Stadium',
-                    league: 'superliga',
-                    leagueName: 'Superligaen',
-                    daysUntil: 2,
-                    hasAnalysis: true,
-                    prediction: { outcome: 'Hjemmesejr', score: '2-0', confidence: 75 },
-                    analysis: 'Hovedstadsderby i Parken hvor FCK traditionelt er stærke. Brøndby kommer fra en skuffende periode, mens København har momentum. Atmosfæren bliver afgørende i denne lokale rivalisering.'
+                    date: new Date(tomorrow.getTime() + 24*60*60*1000).toISOString(),
+                    venue: 'Parken',
+                    league: 'Superligaen',
+                    round: 'Regular Season - 18'
                 },
                 {
+                    id: 'demo3',
+                    homeTeam: 'Arsenal',
+                    awayTeam: 'Chelsea',
+                    date: new Date(tomorrow.getTime() + 2*24*60*60*1000).toISOString(),
+                    venue: 'Emirates Stadium',
+                    league: 'Premier League',
+                    round: 'Regular Season - 24'
+                },
+                {
+                    id: 'demo4',
                     homeTeam: 'FC Midtjylland',
-                    awayTeam: 'AGF',
-                    date: new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+                    awayTeam: 'AGF Aarhus',
+                    date: new Date(tomorrow.getTime() + 3*24*60*60*1000).toISOString(),
                     venue: 'MCH Arena',
-                    league: 'superliga',
-                    leagueName: 'Superligaen',
-                    daysUntil: 4,
-                    hasAnalysis: false
+                    league: 'Superligaen',
+                    round: 'Regular Season - 19'
                 },
                 {
-                    homeTeam: 'Brighton & Hove Albion',
+                    id: 'demo5',
+                    homeTeam: 'Manchester City',
+                    awayTeam: 'Tottenham',
+                    date: new Date(tomorrow.getTime() + 4*24*60*60*1000).toISOString(),
+                    venue: 'Etihad Stadium',
+                    league: 'Premier League',
+                    round: 'Regular Season - 25'
+                },
+                {
+                    id: 'demo6',
+                    homeTeam: 'Brighton',
                     awayTeam: 'Newcastle United',
-                    date: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    venue: 'American Express Stadium',
-                    league: 'premier',
-                    leagueName: 'Premier League',
-                    daysUntil: 7,
-                    hasAnalysis: false
+                    date: new Date(tomorrow.getTime() + 6*24*60*60*1000).toISOString(),
+                    venue: 'Amex Stadium',
+                    league: 'Premier League',
+                    round: 'Regular Season - 26'
                 }
-            ].map(match => ({
-                ...match,
-                homeForm: generateForm(),
-                awayForm: generateForm(),
-                homeStats: generateStats(match.homeTeam),
-                awayStats: generateStats(match.awayTeam)
-            }));
+            ];
             
+            window.allMatches = demoMatches;
             displayMatches(demoMatches);
         }
 
@@ -633,172 +527,40 @@
             const container = document.getElementById('matchesContainer');
             
             if (matches.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.7;">Ingen kommende kampe fundet for de næste 30 dage</div>';
+                container.innerHTML = `
+                    <div class="loading">
+                        <p>Ingen kampe fundet for de næste 30 dage.</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7;">Dette kan skyldes vinterpausen eller tekniske problemer.</p>
+                    </div>
+                `;
                 return;
             }
             
-            const matchesHTML = matches.map(match => {
+            container.innerHTML = matches.map(match => {
                 const matchDate = new Date(match.date);
-                const formattedDate = matchDate.toLocaleDateString('da-DK', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long'
-                });
-                const formattedTime = matchDate.toLocaleTimeString('da-DK', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                const today = new Date();
+                const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
                 
-                return `
-                    <div class="match-card" data-league="${match.league}">
-                        <div class="match-header">
-                            <div class="match-teams">
-                                <span class="team-name">${match.homeTeam}</span>
-                                <span class="vs">vs</span>
-                                <span class="team-name">${match.awayTeam}</span>
+                const homeStats = generateTeamStats(match.homeTeam);
+                const awayStats = generateTeamStats(match.awayTeam);
+                
+                const showAnalysis = daysUntilMatch <= 3;
+                
+                let analysisContent = '';
+                if (showAnalysis) {
+                    const analysis = generateMatchAnalysis(match.homeTeam, match.awayTeam, homeStats, awayStats);
+                    analysisContent = `
+                        <div class="analysis-section">
+                            <div class="analysis-title">🎯 Ekspert Analyse</div>
+                            <div class="analysis-content">${analysis.text}</div>
+                            <div class="prediction-box">
+                                <div class="prediction-title">Min 1X2 Vurdering</div>
+                                <div class="prediction-result">${analysis.prediction}</div>
+                                <div class="confidence">Sikkerhed: ${analysis.confidence}%</div>
                             </div>
-                            <div class="match-info">
-                                <div class="match-date">${formattedDate}</div>
-                                <div class="match-time">${formattedTime} • ${match.venue}</div>
-                                <div class="league-badge">${match.leagueName}</div>
+                            <div class="score-guess">
+                                <strong>Mit scoregæt:</strong> ${analysis.score} (baseret på statistisk sandsynlighed og kampform)
                             </div>
                         </div>
-                        <div class="match-content">
-                            <div class="team-stats">
-                                <div class="team-stat-block">
-                                    <h4>${match.homeTeam}</h4>
-                                    <div class="form-display">
-                                        ${match.homeForm.map(result => {
-                                            const className = result === 'W' ? 'win' : result === 'D' ? 'draw' : 'loss';
-                                            return `<div class="form-result ${className}">${result}</div>`;
-                                        }).join('')}
-                                    </div>
-                                    <div class="additional-stats">
-                                        <div>Mål: ${match.homeStats.goals}</div>
-                                        <div>Boldholdelse: ${match.homeStats.possession}</div>
-                                    </div>
-                                </div>
-                                <div class="vs-separator">VS</div>
-                                <div class="team-stat-block">
-                                    <h4>${match.awayTeam}</h4>
-                                    <div class="form-display">
-                                        ${match.awayForm.map(result => {
-                                            const className = result === 'W' ? 'win' : result === 'D' ? 'draw' : 'loss';
-                                            return `<div class="form-result ${className}">${result}</div>`;
-                                        }).join('')}
-                                    </div>
-                                    <div class="additional-stats">
-                                        <div>Mål: ${match.awayStats.goals}</div>
-                                        <div>Boldholdelse: ${match.awayStats.possession}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            ${match.hasAnalysis ? `
-                                <div class="expert-analysis">
-                                    <div class="analysis-header">
-                                        <div class="analysis-title">🎯 Ekspert Analyse</div>
-                                        <div class="expert-badge-small">PROFESSIONEL</div>
-                                    </div>
-                                    <div class="analysis-content">
-                                        ${match.analysis}
-                                    </div>
-                                    <div class="prediction-box">
-                                        <div class="prediction-section">
-                                            <div class="prediction-label">Min Vurdering (1X2)</div>
-                                            <div class="prediction-value">${match.prediction.outcome}</div>
-                                        </div>
-                                        <div class="prediction-section">
-                                            <div class="prediction-label">Målscore Gæt</div>
-                                            <div class="prediction-value">${match.prediction.score}</div>
-                                        </div>
-                                    </div>
-                                    <div class="confidence-meter">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                            <span style="font-size: 0.9rem;">Sikkerhed:</span>
-                                            <span style="font-weight: bold; color: #ffd700;">${match.prediction.confidence}%</span>
-                                        </div>
-                                        <div class="confidence-bar">
-                                            <div class="confidence-fill" style="width: ${match.prediction.confidence}%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div style="text-align: center; padding: 30px; opacity: 0.7; font-style: italic;">
-                                    📊 Detaljeret kampanalyse frigives ${match.daysUntil - 3} dag${match.daysUntil - 3 !== 1 ? 'e' : ''} før kampstart
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            container.innerHTML = matchesHTML;
-        }
-
-        function generateForm() {
-            const results = ['W', 'D', 'L'];
-            return Array.from({ length: 5 }, () => {
-                const rand = Math.random();
-                return rand < 0.5 ? 'W' : rand < 0.75 ? 'D' : 'L';
-            });
-        }
-
-        function generateStats(teamName) {
-            const teamData = {
-                'Manchester City': { goals: '18-4', possession: '73%' },
-                'Arsenal': { goals: '15-6', possession: '67%' },
-                'Liverpool': { goals: '16-5', possession: '70%' },
-                'Chelsea': { goals: '12-7', possession: '64%' },
-                'FC København': { goals: '12-4', possession: '65%' },
-                'Brøndby IF': { goals: '8-6', possession: '58%' }
-            };
-            
-            return teamData[teamName] || { 
-                goals: `${8 + Math.floor(Math.random() * 8)}-${3 + Math.floor(Math.random() * 6)}`, 
-                possession: `${50 + Math.floor(Math.random() * 20)}%` 
-            };
-        }
-
-        function generatePrediction() {
-            const outcomes = ['Hjemmesejr', 'Uafgjort', 'Udebanensejr'];
-            const scores = ['1-0', '2-1', '1-1', '2-0', '0-1', '1-2'];
-            
-            return {
-                outcome: outcomes[Math.floor(Math.random() * outcomes.length)],
-                score: scores[Math.floor(Math.random() * scores.length)],
-                confidence: 65 + Math.floor(Math.random() * 25)
-            };
-        }
-
-        function generateAnalysis(homeTeam, awayTeam) {
-            const analyses = [
-                `${homeTeam} har vist stabil hjemmeform og vil være favoritter mod ${awayTeam}. Hjemmeholdets seneste præstationer og atmosfæren giver dem en klar fordel i denne vigtige kamp.`,
-                `Spændende opgør mellem ${homeTeam} og ${awayTeam}. Begge hold kommer med forskellige styrker, og kampen forventes at blive afgjort på detaljer og dagens form.`,
-                `${awayTeam} har udfordringer på udebane, mens ${homeTeam} har været stærke hjemme. Taktisk disciplin og effektivitet foran mål bliver afgørende faktorer.`
-            ];
-            
-            return analyses[Math.floor(Math.random() * analyses.length)];
-        }
-        
-        function displayNoMatches() {
-            document.getElementById('matchesContainer').innerHTML = 
-                '<div style="text-align: center; padding: 40px; opacity: 0.7;">Ingen kommende kampe fundet i de næste 30 dage</div>';
-        }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Fodbold Ekspert Platform startet');
-            testApiConnection();
-        });
-        
-        function filterLeague(league) {
-            console.log('Filter clicked:', league);
-            // Update filter buttons
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-    </script>
-</body>
-</html>
+                    `;
+                } else {

@@ -383,6 +383,8 @@
             <button class="filter-btn active" onclick="filterLeague('all')">Alle Ligaer</button>
             <button class="filter-btn" onclick="filterLeague('premier')">Premier League</button>
             <button class="filter-btn" onclick="filterLeague('superliga')">Superligaen</button>
+            <button class="filter-btn" onclick="filterLeague('champions')">Champions League</button>
+            <button class="filter-btn" onclick="filterLeague('conference')">Conference League</button>
         </div>
 
         <section class="matches-section">
@@ -412,12 +414,18 @@
             console.log('🔄 Starter fodboldekspert platform...');
             
             try {
-                // Always fetch both leagues separately
+                // Fetch all four leagues separately with cache busting
                 console.log('🔄 Henter Premier League kampe...');
-                const premierResponse = await fetch('/api/matches?league=premier&days=30');
+                const premierResponse = await fetch(`/api/matches?league=premier&days=30&t=${Date.now()}`);
                 
                 console.log('🔄 Henter Superligaen kampe...');
-                const superligaResponse = await fetch('/api/matches?league=superliga&days=30');
+                const superligaResponse = await fetch(`/api/matches?league=superliga&days=30&t=${Date.now()}`);
+                
+                console.log('🔄 Henter Champions League kampe...');
+                const championsResponse = await fetch(`/api/matches?league=champions&days=30&t=${Date.now()}`);
+                
+                console.log('🔄 Henter Conference League kampe...');
+                const conferenceResponse = await fetch(`/api/matches?league=conference&days=30&t=${Date.now()}`);
                 
                 let allMatches = [];
                 
@@ -434,6 +442,22 @@
                     console.log('✅ Superligaen kampe hentet:', superligaData.matches?.length || 0);
                     if (superligaData.matches) {
                         allMatches = allMatches.concat(superligaData.matches.map(m => ({...m, league: 'Superligaen'})));
+                    }
+                }
+                
+                if (championsResponse.ok) {
+                    const championsData = await championsResponse.json();
+                    console.log('✅ Champions League kampe hentet:', championsData.matches?.length || 0);
+                    if (championsData.matches) {
+                        allMatches = allMatches.concat(championsData.matches.map(m => ({...m, league: 'Champions League'})));
+                    }
+                }
+                
+                if (conferenceResponse.ok) {
+                    const conferenceData = await conferenceResponse.json();
+                    console.log('✅ Conference League kampe hentet:', conferenceData.matches?.length || 0);
+                    if (conferenceData.matches) {
+                        allMatches = allMatches.concat(conferenceData.matches.map(m => ({...m, league: 'Conference League'})));
                     }
                 }
                 
@@ -750,6 +774,12 @@
             } else if (league === 'superliga') {
                 filteredMatches = window.allMatches.filter(m => m.league === 'Superligaen');
                 console.log('Superligaen kampe:', filteredMatches.length);
+            } else if (league === 'champions') {
+                filteredMatches = window.allMatches.filter(m => m.league === 'Champions League');
+                console.log('Champions League kampe:', filteredMatches.length);
+            } else if (league === 'conference') {
+                filteredMatches = window.allMatches.filter(m => m.league === 'Conference League');
+                console.log('Conference League kampe:', filteredMatches.length);
             }
             
             displayMatches(filteredMatches);
@@ -776,11 +806,11 @@
             
             try {
                 console.log('🔍 Testing Premier League API...');
-                const premierResponse = await fetch('/api/matches?league=premier&days=30');
+                const premierResponse = await fetch(`/api/matches?league=premier&days=30&t=${Date.now()}`);
                 const premierText = await premierResponse.text();
                 
                 console.log('🔍 Testing Superligaen API...');
-                const superligaResponse = await fetch('/api/matches?league=superliga&days=30');
+                const superligaResponse = await fetch(`/api/matches?league=superliga&days=30&t=${Date.now()}`);
                 const superligaText = await superligaResponse.text();
                 
                 debugOutput.innerHTML = `

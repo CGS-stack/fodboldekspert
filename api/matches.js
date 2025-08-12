@@ -19,10 +19,12 @@ export default async function handler(req, res) {
 
   console.log(`API call for league: ${league}, from: ${today} to: ${endDateStr}`);
 
-  // League mapping with CORRECT IDs
+  // League mapping with CORRECT IDs - ADDED Champions League and Conference League
   const leagueConfig = {
     'premier': { id: 39, country: 'England', name: 'Premier League' },
-    'superliga': { id: 119, country: 'Denmark', name: 'Superliga' }  // FIXED: Was 271, now 119
+    'superliga': { id: 119, country: 'Denmark', name: 'Superliga' },
+    'champions': { id: 2, country: 'World', name: 'UEFA Champions League' },
+    'conference': { id: 848, country: 'World', name: 'UEFA Conference League' }
   };
 
   const config = leagueConfig[league];
@@ -130,6 +132,20 @@ export default async function handler(req, res) {
                   return isValidDanishMatch;
                 });
                 
+              } else if (config.id === 2 || config.id === 848) {
+                // CHAMPIONS LEAGUE & CONFERENCE LEAGUE: European filtering
+                seasonFixtures = data.response.filter(fixture => {
+                  const isCorrectLeague = fixture.league.id === config.id;
+                  const matchDate = new Date(fixture.fixture.date);
+                  const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
+                  
+                  // European competitions should have teams from multiple countries
+                  const isValid = isCorrectLeague && isUpcoming;
+                  
+                  console.log(`EUROPEAN FILTER: ${fixture.teams.home.name} vs ${fixture.teams.away.name} - Valid: ${isValid}`);
+                  
+                  return isValid;
+                });
               } else {
                 // PREMIER LEAGUE: Standard filtering (trust the API)
                 seasonFixtures = data.response.filter(fixture => {

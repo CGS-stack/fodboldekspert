@@ -574,8 +574,8 @@
                 const today = new Date();
                 const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
                 
-                const homeStats = generateTeamStats(match.homeTeam);
-                const awayStats = generateTeamStats(match.awayTeam);
+                const homeStats = await generateTeamStats(match.homeTeam);
+                const awayStats = await generateTeamStats(match.awayTeam);
                 
                 const showAnalysis = daysUntilMatch <= 3;
                 
@@ -624,25 +624,37 @@
                         <div class="team-stats">
                             <div class="team-stat">
                                 <div class="team-name">🏠 ${match.homeTeam}</div>
-                                <div class="form-display">
-                                    ${homeStats.form.map(result => 
-                                        `<div class="form-result ${result}">${result}</div>`
-                                    ).join('')}
-                                </div>
-                                <div style="font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Mål: ${homeStats.goalsFor}-${homeStats.goalsAgainst} | Boldholdelse: ${homeStats.possession}%
-                                </div>
+                                ${homeStats.error ? 
+                                    `<div style="color: #e74c3c; font-size: 0.9rem; padding: 1rem; text-align: center;">
+                                        ❌ ${homeStats.errorMessage}
+                                    </div>` :
+                                    `<div class="form-display">
+                                        ${homeStats.form.map(result => 
+                                            `<div class="form-result ${result}">${result}</div>`
+                                        ).join('')}
+                                    </div>
+                                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                        Mål: ${homeStats.goalsFor}-${homeStats.goalsAgainst} | Boldholdelse: ${homeStats.possession}%
+                                        ${homeStats.isRealData ? '<span style="color: #27ae60; font-size: 0.8rem;">📊 Live data</span>' : '<span style="color: #e74c3c; font-size: 0.8rem;">❌ Data fejl</span>'}
+                                    </div>`
+                                }
                             </div>
                             <div class="team-stat">
                                 <div class="team-name">✈️ ${match.awayTeam}</div>
-                                <div class="form-display">
-                                    ${awayStats.form.map(result => 
-                                        `<div class="form-result ${result}">${result}</div>`
-                                    ).join('')}
-                                </div>
-                                <div style="font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Mål: ${awayStats.goalsFor}-${awayStats.goalsAgainst} | Boldholdelse: ${awayStats.possession}%
-                                </div>
+                                ${awayStats.error ? 
+                                    `<div style="color: #e74c3c; font-size: 0.9rem; padding: 1rem; text-align: center;">
+                                        ❌ ${awayStats.errorMessage}
+                                    </div>` :
+                                    `<div class="form-display">
+                                        ${awayStats.form.map(result => 
+                                            `<div class="form-result ${result}">${result}</div>`
+                                        ).join('')}
+                                    </div>
+                                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                        Mål: ${awayStats.goalsFor}-${awayStats.goalsAgainst} | Boldholdelse: ${awayStats.possession}%
+                                        ${awayStats.isRealData ? '<span style="color: #27ae60; font-size: 0.8rem;">📊 Live data</span>' : '<span style="color: #e74c3c; font-size: 0.8rem;">❌ Data fejl</span>'}
+                                    </div>`
+                                }
                             </div>
                         </div>
                         
@@ -652,8 +664,80 @@
             }).join('');
         }
 
-        function generateTeamStats(teamName) {
-            // Enhanced team ratings with realistic stats
+        async function generateTeamStats(teamName) {
+            console.log(`🔍 Fetching LIVE data for: ${teamName}`);
+            
+            try {
+                // Determine league based on team name - IMPROVED DETECTION
+                let league = 'premier';
+                const teamLower = teamName.toLowerCase();
+                
+                // Danish teams (including Copenhagen variants)
+                if (teamLower.includes('københavn') || teamLower.includes('copenhagen') || teamLower.includes('fck') ||
+                    teamLower.includes('midtjylland') || teamLower.includes('brøndby') || teamLower.includes('agf') ||
+                    teamLower.includes('silkeborg') || teamLower.includes('nordsjælland') || teamLower.includes('randers') ||
+                    teamLower.includes('viborg') || teamLower.includes('odense') || teamLower.includes('aalborg') ||
+                    teamLower.includes('vejle') || teamLower.includes('sønderjyske')) {
+                    league = 'superliga';
+                    console.log(`📍 Detected Danish team: ${teamName} → Superliga`);
+                }
+                // Champions League teams (including qualifying teams)
+                else if (teamLower.includes('malmo') || teamLower.includes('malmö') || teamLower.includes('qarabag') ||
+                        teamLower.includes('shkendija') || teamLower.includes('real madrid') || teamLower.includes('barcelona') ||
+                        teamLower.includes('bayern') || teamLower.includes('psg') || teamLower.includes('inter') ||
+                        teamLower.includes('milan') || teamLower.includes('juventus') || teamLower.includes('atletico') ||
+                        teamLower.includes('dortmund') || teamLower.includes('red star') || teamLower.includes('dinamo')) {
+                    league = 'champions';
+                    console.log(`📍 Detected Champions League team: ${teamName} → Champions`);
+                }
+                
+                console.log(`🎯 Using league: ${league} for team: ${teamName}`);
+                
+                // Fetch real stats from API
+                const response = await fetch(`/api/team-stats?teamName=${encodeURIComponent(teamName)}&league=${league}&t=${Date.now()}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`✅ API Response for ${teamName}:`, data);
+                    
+                    if (data.stats && data.form && data.form.length > 0) {
+                        console.log(`🎉 LIVE DATA found for ${teamName}: Form=${data.form.join('')}, Goals=${data.stats.goalsFor}-${data.stats.goalsAgainst}`);
+                        return {
+                            form: data.form,
+                            goalsFor: data.stats.goalsFor || 0,
+                            goalsAgainst: data.stats.goalsAgainst || 0,
+                            possession: Math.round(data.stats.possession || 50),
+                            matchesPlayed: data.stats.matchesPlayed || 0,
+                            wins: data.stats.wins || 0,
+                            draws: data.stats.draws || 0,
+                            losses: data.stats.losses || 0,
+                            isRealData: true
+                        };
+                    } else {
+                        console.log(`⚠️ API returned incomplete data for ${teamName}:`, data);
+                    }
+                } else {
+                    console.log(`❌ API request failed for ${teamName}: ${response.status}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error fetching live data for ${teamName}:`, error);
+            }
+            
+            // NO FALLBACK - Return error state instead
+            console.log(`❌ FAILED to get live data for ${teamName} - returning error state`);
+            return {
+                form: [],
+                goalsFor: null,
+                goalsAgainst: null,
+                possession: null,
+                isRealData: false,
+                error: true,
+                errorMessage: `Live data ikke tilgængelig for ${teamName}`
+            };
+        }
+        
+        function generateFallbackStats(teamName) {
+            // Enhanced team ratings with realistic stats (fallback only)
             const teamRatings = {
                 // Premier League teams
                 'Manchester City': { rating: 94, goals: 12, conceded: 3, possession: 68 },
@@ -677,7 +761,7 @@
                 'FC Nordsjælland': { rating: 70, goals: 6, conceded: 7, possession: 51 },
                 'Viborg FF': { rating: 65, goals: 4, conceded: 9, possession: 46 },
                 
-                // European Champions League teams  
+                // Champions League teams  
                 'Real Madrid': { rating: 96, goals: 15, conceded: 4, possession: 64 },
                 'Barcelona': { rating: 92, goals: 14, conceded: 6, possession: 68 },
                 'Bayern Munich': { rating: 94, goals: 16, conceded: 5, possession: 66 },
@@ -687,6 +771,14 @@
                 'Juventus': { rating: 82, goals: 9, conceded: 8, possession: 58 },
                 'Atletico Madrid': { rating: 85, goals: 8, conceded: 5, possession: 52 },
                 'Borussia Dortmund': { rating: 83, goals: 12, conceded: 9, possession: 60 },
+                
+                // Champions League Qualifying teams
+                'FC Copenhagen': { rating: 74, goals: 6, conceded: 4, possession: 52 },
+                'FC København': { rating: 74, goals: 6, conceded: 4, possession: 52 },
+                'Malmo FF': { rating: 69, goals: 5, conceded: 6, possession: 48 },
+                'Malmö FF': { rating: 69, goals: 5, conceded: 6, possession: 48 },
+                'Red Star Belgrade': { rating: 72, goals: 7, conceded: 5, possession: 50 },
+                'Dinamo Zagreb': { rating: 71, goals: 6, conceded: 5, possession: 49 },
                 
                 // European Conference League teams
                 'AS Roma': { rating: 80, goals: 9, conceded: 7, possession: 56 },
@@ -701,7 +793,7 @@
             
             // Generate realistic last 5 matches based on team strength
             const results = [];
-            const winChance = Math.max(0.2, (team.rating - 60) / 40); // 20-100% win chance based on rating
+            const winChance = Math.max(0.2, (team.rating - 60) / 40);
             
             for (let i = 0; i < 5; i++) {
                 const rand = Math.random();
@@ -718,7 +810,8 @@
                 form: results,
                 goalsFor: team.goals,
                 goalsAgainst: team.conceded,
-                possession: team.possession
+                possession: team.possession,
+                isRealData: false
             };
         }
 
@@ -748,9 +841,23 @@
                 confidence = Math.max(drawProb + 10, 45);
             }
             
-            // Generate score
-            const homeGoals = Math.max(0, Math.round(1.5 + (homeRating - 70) * 0.03 + Math.random() * 1.5));
-            const awayGoals = Math.max(0, Math.round(1.2 + (awayRating - 70) * 0.03 + Math.random() * 1.5));
+            // Generate score BASED ON prediction, not independently
+            let homeGoals, awayGoals;
+            
+            if (prediction.includes('1')) {
+                // Home win - home team scores more
+                homeGoals = Math.max(1, Math.round(1.5 + (homeRating - 70) * 0.04 + Math.random() * 1.5));
+                awayGoals = Math.max(0, Math.round(0.8 + (awayRating - 70) * 0.03 + Math.random() * 1.2));
+            } else if (prediction.includes('2')) {
+                // Away win - away team scores more  
+                awayGoals = Math.max(1, Math.round(1.5 + (awayRating - 70) * 0.04 + Math.random() * 1.5));
+                homeGoals = Math.max(0, Math.round(0.8 + (homeRating - 70) * 0.03 + Math.random() * 1.2));
+            } else {
+                // Draw - similar scores
+                const baseScore = Math.random() < 0.5 ? 1 : 2; // 1-1 or 2-2 most common draws
+                homeGoals = baseScore;
+                awayGoals = baseScore;
+            }
             
             const analysisText = `
                 Baseret på grundig analyse af de seneste 5 kampe, head-to-head statistikker og aktuelle spillertilgængelighed vurderer jeg dette opgør som ${prediction.includes('1') ? 'hjemmebane favorit' : prediction.includes('2') ? 'udebane favorit' : 'meget jævnbyrdigt'}. 
@@ -779,7 +886,8 @@
                 // Champions League
                 'Real Madrid': 96, 'Barcelona': 92, 'Bayern Munich': 94, 'Paris Saint-Germain': 90,
                 'Inter Milan': 87, 'AC Milan': 84, 'Juventus': 82, 'Atletico Madrid': 85,
-                'Borussia Dortmund': 83,
+                'Borussia Dortmund': 83, 'FC Copenhagen': 74, 'FC København': 74, 
+                'Malmo FF': 69, 'Malmö FF': 69, 'Red Star Belgrade': 72, 'Dinamo Zagreb': 71,
                 
                 // Conference League
                 'AS Roma': 80, 'Fiorentina': 78, 'Olympiacos': 75, 'AZ Alkmaar': 74, 'FC Basel': 71

@@ -675,7 +675,26 @@
                 'Silkeborg IF': { rating: 69, goals: 5, conceded: 7, possession: 50 },
                 'Randers FC': { rating: 67, goals: 5, conceded: 8, possession: 48 },
                 'FC Nordsjælland': { rating: 70, goals: 6, conceded: 7, possession: 51 },
-                'Viborg FF': { rating: 65, goals: 4, conceded: 9, possession: 46 }
+                'Viborg FF': { rating: 65, goals: 4, conceded: 9, possession: 46 },
+                
+                // European Champions League teams  
+                'Real Madrid': { rating: 96, goals: 15, conceded: 4, possession: 64 },
+                'Barcelona': { rating: 92, goals: 14, conceded: 6, possession: 68 },
+                'Bayern Munich': { rating: 94, goals: 16, conceded: 5, possession: 66 },
+                'Paris Saint-Germain': { rating: 90, goals: 13, conceded: 6, possession: 62 },
+                'Inter Milan': { rating: 87, goals: 11, conceded: 7, possession: 59 },
+                'AC Milan': { rating: 84, goals: 10, conceded: 8, possession: 57 },
+                'Juventus': { rating: 82, goals: 9, conceded: 8, possession: 58 },
+                'Atletico Madrid': { rating: 85, goals: 8, conceded: 5, possession: 52 },
+                'Borussia Dortmund': { rating: 83, goals: 12, conceded: 9, possession: 60 },
+                
+                // European Conference League teams
+                'AS Roma': { rating: 80, goals: 9, conceded: 7, possession: 56 },
+                'Fiorentina': { rating: 78, goals: 8, conceded: 7, possession: 54 },
+                'West Ham United': { rating: 72, goals: 6, conceded: 8, possession: 50 },
+                'Olympiacos': { rating: 75, goals: 7, conceded: 6, possession: 53 },
+                'AZ Alkmaar': { rating: 74, goals: 8, conceded: 8, possession: 55 },
+                'FC Basel': { rating: 71, goals: 6, conceded: 7, possession: 51 }
             };
             
             const team = teamRatings[teamName] || { rating: 65, goals: 5, conceded: 7, possession: 50 };
@@ -749,10 +768,21 @@
 
         function getTeamRating(teamName) {
             const ratings = {
+                // Premier League
                 'Manchester City': 94, 'Arsenal': 89, 'Liverpool': 91, 'Chelsea': 83,
                 'Manchester United': 81, 'Tottenham': 79, 'Newcastle United': 77, 'Brighton': 75,
+                
+                // Danish Superliga  
                 'FC København': 79, 'FC Midtjylland': 76, 'Brøndby IF': 73, 'AGF Aarhus': 71,
-                'Silkeborg IF': 69, 'Randers FC': 67, 'FC Nordsjælland': 70, 'Viborg FF': 65
+                'Silkeborg IF': 69, 'Randers FC': 67, 'FC Nordsjælland': 70, 'Viborg FF': 65,
+                
+                // Champions League
+                'Real Madrid': 96, 'Barcelona': 92, 'Bayern Munich': 94, 'Paris Saint-Germain': 90,
+                'Inter Milan': 87, 'AC Milan': 84, 'Juventus': 82, 'Atletico Madrid': 85,
+                'Borussia Dortmund': 83,
+                
+                // Conference League
+                'AS Roma': 80, 'Fiorentina': 78, 'Olympiacos': 75, 'AZ Alkmaar': 74, 'FC Basel': 71
             };
             return ratings[teamName] || 65;
         }
@@ -813,11 +843,23 @@
                 const superligaResponse = await fetch(`/api/matches?league=superliga&days=30&t=${Date.now()}`);
                 const superligaText = await superligaResponse.text();
                 
+                console.log('🔍 Testing Champions League API...');
+                const championsResponse = await fetch(`/api/matches?league=champions&days=30&t=${Date.now()}`);
+                const championsText = await championsResponse.text();
+                
+                console.log('🔍 Testing Conference League API...');
+                const conferenceResponse = await fetch(`/api/matches?league=conference&days=30&t=${Date.now()}`);
+                const conferenceText = await conferenceResponse.text();
+                
                 debugOutput.innerHTML = `
                     <strong>Premier League Response:</strong><br>
-                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">${premierText.substring(0, 500)}...</pre>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 100px; overflow-y: auto;">${premierText.substring(0, 300)}...</pre>
                     <strong>Superligaen Response:</strong><br>
-                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">${superligaText.substring(0, 500)}...</pre>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 100px; overflow-y: auto;">${superligaText.substring(0, 300)}...</pre>
+                    <strong>Champions League Response:</strong><br>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 100px; overflow-y: auto;">${championsText.substring(0, 300)}...</pre>
+                    <strong>Conference League Response:</strong><br>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 100px; overflow-y: auto;">${conferenceText.substring(0, 300)}...</pre>
                 `;
                 
                 console.log('Premier League API response:', premierText);

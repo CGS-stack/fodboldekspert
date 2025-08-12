@@ -463,33 +463,33 @@
                 
                 if (allMatches.length > 0) {
                     window.allMatches = allMatches;
-                    loadRealData(allMatches);
+                    await loadRealData(allMatches);
                 } else {
                     console.log('⚠️ Ingen kampe fundet - bruger demo data');
-                    loadDemoData();
+                    await loadDemoData();
                 }
                 
             } catch (error) {
                 console.error('❌ API fejl:', error);
-                loadDemoData();
+                await loadDemoData();
             }
         }
 
-        function loadRealData(matches) {
+        async function loadRealData(matches) {
             console.log('✅ Processerer rigtige kampe:', matches.length);
             
             if (matches.length === 0) {
-                loadDemoData();
+                await loadDemoData();
                 return;
             }
             
             // Sort by date
             matches.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            displayMatches(matches);
+            await displayMatches(matches);
         }
 
-        function loadDemoData() {
+        async function loadDemoData() {
             console.log('🎮 Indlæser demo data...');
             
             const tomorrow = new Date();
@@ -553,10 +553,10 @@
             ];
             
             window.allMatches = demoMatches;
-            displayMatches(demoMatches);
+            await displayMatches(demoMatches);
         }
 
-        function displayMatches(matches) {
+        async function displayMatches(matches) {
             const container = document.getElementById('matchesContainer');
             
             if (matches.length === 0) {
@@ -569,11 +569,17 @@
                 return;
             }
             
-            container.innerHTML = matches.map(match => {
+            // Process matches one by one to handle async team stats
+            const matchElements = [];
+            
+            for (const match of matches) {
                 const matchDate = new Date(match.date);
                 const today = new Date();
                 const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
                 
+                console.log(`🔄 Processing match: ${match.homeTeam} vs ${match.awayTeam}`);
+                
+                // Fetch team stats asynchronously
                 const homeStats = await generateTeamStats(match.homeTeam);
                 const awayStats = await generateTeamStats(match.awayTeam);
                 
@@ -604,7 +610,7 @@
                     `;
                 }
                 
-                return `
+                const matchElement = `
                     <div class="match-card" onclick="quickPredict('${match.homeTeam}', '${match.awayTeam}')">
                         <div class="match-header">
                             <div class="match-teams">${match.homeTeam} vs ${match.awayTeam}</div>
@@ -661,7 +667,11 @@
                         ${analysisContent}
                     </div>
                 `;
-            }).join('');
+                
+                matchElements.push(matchElement);
+            }
+            
+            container.innerHTML = matchElements.join('');
         }
 
         async function generateTeamStats(teamName) {
@@ -895,7 +905,7 @@
             return ratings[teamName] || 65;
         }
 
-        function filterLeague(league) {
+        async function filterLeague(league) {
             console.log('🔍 Filtrerer til liga:', league);
             
             const matchesContainer = document.getElementById('matchesContainer');
@@ -920,7 +930,7 @@
                 console.log('Conference League kampe:', filteredMatches.length);
             }
             
-            displayMatches(filteredMatches);
+            await displayMatches(filteredMatches);
             
             // Update filter buttons
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));

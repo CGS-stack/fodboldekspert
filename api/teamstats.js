@@ -1,4 +1,4 @@
-// ✅ KORREKT: api/teamstats.js til Vercel Serverless
+// api/teamstats.js - Komplet kode til Vercel Serverless
 
 module.exports = async function handler(req, res) {
   // Set CORS headers
@@ -17,10 +17,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { teamName, league } = req.query;
+    const { teamName, league, teamId } = req.query;
     
-    if (!teamName) {
-      res.status(400).json({ error: 'teamName parameter required' });
+    if (!teamName && !teamId) {
+      res.status(400).json({ error: 'teamName or teamId parameter required' });
       return;
     }
 
@@ -44,38 +44,44 @@ module.exports = async function handler(req, res) {
     const config = league ? leagueConfig[league] : leagueConfig.premier;
     const season = '2024';
 
-    // Først find team ID
-    const teamsUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}&search=${encodeURIComponent(teamName)}`;
-    
-    const teamsResponse = await fetch(teamsUrl, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': API_KEY,
-        'X-RapidAPI-Host': API_HOST
-      }
-    });
+    let finalTeamId = teamId;
+    let teamInfo = null;
 
-    if (!teamsResponse.ok) {
-      throw new Error(`Teams API call failed: ${teamsResponse.status}`);
-    }
-
-    const teamsData = await teamsResponse.json();
-    const teams = teamsData.response || [];
-    
-    if (teams.length === 0) {
-      res.status(404).json({ 
-        error: 'Team not found',
-        teamName: teamName,
-        league: league 
+    // Hvis teamId ikke er angivet, find det via teamName
+    if (!finalTeamId && teamName) {
+      const teamsUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}&search=${encodeURIComponent(teamName)}`;
+      
+      const teamsResponse = await fetch(teamsUrl, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': API_KEY,
+          'X-RapidAPI-Host': API_HOST
+        }
       });
-      return;
-    }
 
-    const team = teams[0];
-    const teamId = team.team.id;
+      if (!teamsResponse.ok) {
+        throw new Error(`Teams API call failed: ${teamsResponse.status}`);
+      }
+
+      const teamsData = await teamsResponse.json();
+      const teams = teamsData.response || [];
+      
+      if (teams.length === 0) {
+        res.status(404).json({ 
+          error: 'Team not found',
+          teamName: teamName,
+          league: league 
+        });
+        return;
+      }
+
+      const team = teams[0];
+      finalTeamId = team.team.id;
+      teamInfo = team.team;
+    }
 
     // Hent team statistikker
-    const statsUrl = `https://${API_HOST}/teams/statistics?league=${config.id}&season=${season}&team=${teamId}`;
+    const statsUrl = `https://${API_HOST}/teams/statistics?league=${config.id}&season=${season}&team=${finalTeamId}`;
     
     const statsResponse = await fetch(statsUrl, {
       method: 'GET',
@@ -86,17 +92,51 @@ module.exports = async function handler(req, res) {
     });
 
     if (!statsResponse.ok) {
-      throw new Error(`Stats API call failed: ${statsResponse.status}`);
+      // Hvis statistikker ikke er tilgængelige, returner basis info
+      res.status(200).json({
+        success: true,
+        team: teamInfo,
+        league: config,
+        statistics: null,
+        message: 'Live statistics not available - may require upgraded API plan'
+      });
+      return;
     }
 
     const statsData = await statsResponse.json();
     
+    // Hent seneste kampe for ekstra kontekst
+    let recentFixtures = [];
+    try {
+      const fixturesUrl = `https://${API_HOST}/fixtures?team=${finalTeamId}&last=5`;
+      
+      const fixturesResponse = await fetch(fixturesUrl, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': API_KEY,
+          'X-RapidAPI-Host': API_HOST
+        }
+      });
+
+      if (fixturesResponse.ok) {
+        const fixturesData = await fixturesResponse.json();
+        recentFixtures = fixturesData.response || [];
+      }
+    } catch (error) {
+      console.log('Could not fetch recent fixtures:', error.message);
+    }
+
     // Return response
     res.status(200).json({
       success: true,
-      team: team.team,
+      team: teamInfo || { id: finalTeamId },
       league: config,
-      statistics: statsData.response || null
+      statistics: statsData.response || null,
+      recentFixtures: recentFixtures,
+      dataAvailable: {
+        statistics: !!statsData.response,
+        recentFixtures: recentFixtures.length > 0
+      }
     });
 
   } catch (error) {

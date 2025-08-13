@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     if (league && leagueConfig[league]) {
       // Specifik liga
       const config = leagueConfig[league];
-      const season = '2024';
+      const season = '2025';
       
       const apiUrl = `https://${API_HOST}/fixtures?league=${config.id}&season=${season}`;
       

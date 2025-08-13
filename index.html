@@ -431,7 +431,7 @@
                     const premierData = await premierResponse.json();
                     console.log('✅ Premier League kampe hentet:', premierData.matches?.length || 0);
                     if (premierData.matches) {
-                        allMatches = allMatches.concat(premierData.matches.map(m => ({...m, league: 'Premier League'})));
+                        allMatches = allMatches.concat(premierData.matches.map(m => ({...m, leagueDisplay: 'Premier League'})));
                     }
                 }
                 
@@ -439,7 +439,7 @@
                     const superligaData = await superligaResponse.json();
                     console.log('✅ Superligaen kampe hentet:', superligaData.matches?.length || 0);
                     if (superligaData.matches) {
-                        allMatches = allMatches.concat(superligaData.matches.map(m => ({...m, league: 'Superligaen'})));
+                        allMatches = allMatches.concat(superligaData.matches.map(m => ({...m, leagueDisplay: 'Superligaen'})));
                     }
                 }
                 
@@ -466,7 +466,7 @@
             }
             
             // Sort by date
-            matches.sort((a, b) => new Date(a.date) - new Date(b.date));
+            matches.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
             
             displayMatches(matches);
         }
@@ -501,7 +501,13 @@
             
             // Generate cards with loading placeholders for stats
             const cardsHtml = matches.map(match => {
-                const matchDate = new Date(match.date);
+                // Extract correct properties from API response
+                const homeTeam = match.teams?.home?.name || 'Unknown Team';
+                const awayTeam = match.teams?.away?.name || 'Unknown Team';
+                const matchDate = new Date(match.fixture?.date || Date.now());
+                const venue = match.fixture?.venue?.name || 'TBA';
+                const leagueName = match.leagueDisplay || match.league?.name || 'Unknown League';
+                
                 const today = new Date();
                 const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
                 
@@ -519,15 +525,15 @@
                 } else {
                     analysisContent = `
                         <div class="pending-analysis">
-                            📅 Analyse tilgængelig om ${daysUntilMatch - 3} dage (max 3 dage før kampstart)
+                            📅 Analyse tilgængelig om ${Math.max(0, daysUntilMatch - 3)} dage (max 3 dage før kampstart)
                         </div>
                     `;
                 }
                 
                 return `
-                    <div class="match-card" data-match-id="${match.id}">
+                    <div class="match-card" data-match-id="${match.fixture?.id || 'unknown'}">
                         <div class="match-header">
-                            <div class="match-teams">${match.homeTeam} vs ${match.awayTeam}</div>
+                            <div class="match-teams">${homeTeam} vs ${awayTeam}</div>
                             <div class="match-info">
                                 <div class="match-date">${matchDate.toLocaleDateString('da-DK', { 
                                     weekday: 'long', 
@@ -536,27 +542,27 @@
                                     hour: '2-digit',
                                     minute: '2-digit'
                                 })}</div>
-                                <div class="match-venue">${match.venue}</div>
+                                <div class="match-venue">${venue}</div>
                             </div>
                         </div>
-                        <div class="match-league">${match.league}</div>
+                        <div class="match-league">${leagueName}</div>
                         
                         <div class="team-stats">
                             <div class="team-stat">
-                                <div class="team-name">🏠 ${match.homeTeam}</div>
-                                <div class="form-display" id="home-form-${match.id}">
+                                <div class="team-name">🏠 ${homeTeam}</div>
+                                <div class="form-display" id="home-form-${match.fixture?.id || 'unknown'}">
                                     <div style="color: #b8b8b8;">🔄 Henter form...</div>
                                 </div>
-                                <div id="home-stats-${match.id}" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                <div id="home-stats-${match.fixture?.id || 'unknown'}" style="font-size: 0.9rem; margin-top: 0.5rem;">
                                     🔄 Henter statistikker...
                                 </div>
                             </div>
                             <div class="team-stat">
-                                <div class="team-name">✈️ ${match.awayTeam}</div>
-                                <div class="form-display" id="away-form-${match.id}">
+                                <div class="team-name">✈️ ${awayTeam}</div>
+                                <div class="form-display" id="away-form-${match.fixture?.id || 'unknown'}">
                                     <div style="color: #b8b8b8;">🔄 Henter form...</div>
                                 </div>
-                                <div id="away-stats-${match.id}" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                <div id="away-stats-${match.fixture?.id || 'unknown'}" style="font-size: 0.9rem; margin-top: 0.5rem;">
                                     🔄 Henter statistikker...
                                 </div>
                             </div>
@@ -571,8 +577,17 @@
             
             // Now load real stats for each team
             for (const match of matches) {
-                await loadTeamStats(match.homeTeam, match.league, `home`, match.id);
-                await loadTeamStats(match.awayTeam, match.league, `away`, match.id);
+                const homeTeam = match.teams?.home?.name;
+                const awayTeam = match.teams?.away?.name;
+                const league = match.leagueDisplay;
+                const matchId = match.fixture?.id || 'unknown';
+                
+                if (homeTeam) {
+                    await loadTeamStats(homeTeam, league, `home`, matchId);
+                }
+                if (awayTeam) {
+                    await loadTeamStats(awayTeam, league, `away`, matchId);
+                }
             }
         }
 
@@ -665,10 +680,10 @@
             let filteredMatches = window.allMatches;
             
             if (league === 'premier') {
-                filteredMatches = window.allMatches.filter(m => m.league === 'Premier League');
+                filteredMatches = window.allMatches.filter(m => m.leagueDisplay === 'Premier League');
                 console.log('Premier League kampe:', filteredMatches.length);
             } else if (league === 'superliga') {
-                filteredMatches = window.allMatches.filter(m => m.league === 'Superligaen');
+                filteredMatches = window.allMatches.filter(m => m.leagueDisplay === 'Superligaen');
                 console.log('Superligaen kampe:', filteredMatches.length);
             }
             

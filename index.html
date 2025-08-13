@@ -704,7 +704,7 @@
                 console.log(`🎯 Using league: ${league} for team: ${teamName}`);
                 
                 // Fetch real stats from API
-                const response = await fetch(`/api/team-stats?teamName=${encodeURIComponent(teamName)}&league=${league}&t=${Date.now()}`);
+                const response = await fetch(`/api/teamstats?teamName=${encodeURIComponent(teamName)}&league=${league}&t=${Date.now()}`);
                 
                 if (response.ok) {
                     const data = await response.json();

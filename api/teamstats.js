@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
     };
 
     const config = league ? leagueConfig[league] : leagueConfig.premier;
-    const season = '2024';
+    const season = '2025';
 
     let finalTeamId = teamId;
     let teamInfo = null;

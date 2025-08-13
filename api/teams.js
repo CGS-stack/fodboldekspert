@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     if (league && leagueConfig[league]) {
       // Specifik liga
       const config = leagueConfig[league];
-      const season = '2024';
+      const season = '2025';
       
       let apiUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}`;
       
@@ -90,7 +90,7 @@ module.exports = async function handler(req, res) {
 
     } else {
       // Alle ligaer
-      const season = '2024';
+      const season = '2025';
       
       for (const [leagueKey, config] of Object.entries(leagueConfig)) {
         try {

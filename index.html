@@ -240,6 +240,13 @@
         .form-result.W { background: #27ae60; color: white; }
         .form-result.D { background: #f39c12; color: white; }
         .form-result.L { background: #e74c3c; color: white; }
+        .form-result.ERROR { background: #e74c3c; color: white; }
+
+        .error-message {
+            color: #e74c3c;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
 
         .analysis-section {
             background: rgba(0, 0, 0, 0.4);
@@ -383,8 +390,6 @@
             <button class="filter-btn active" onclick="filterLeague('all')">Alle Ligaer</button>
             <button class="filter-btn" onclick="filterLeague('premier')">Premier League</button>
             <button class="filter-btn" onclick="filterLeague('superliga')">Superligaen</button>
-            <button class="filter-btn" onclick="filterLeague('champions')">Champions League</button>
-            <button class="filter-btn" onclick="filterLeague('conference')">Conference League</button>
         </div>
 
         <section class="matches-section">
@@ -394,7 +399,6 @@
             <div style="background: rgba(255, 255, 0, 0.1); border: 1px solid #ffd700; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
                 <h3 style="color: #ffd700; margin-bottom: 0.5rem;">🔧 Debug Tools</h3>
                 <button onclick="testApiDirectly()" style="background: #ffd700; color: #1a1a2e; border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-right: 0.5rem; cursor: pointer;">Test API Direkte</button>
-                <button onclick="loadDemoData()" style="background: #27ae60; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Vis Demo Data</button>
                 <div id="debugOutput" style="margin-top: 0.5rem; font-size: 0.9rem; color: #e0e0e0;"></div>
             </div>
             
@@ -414,18 +418,12 @@
             console.log('🔄 Starter fodboldekspert platform...');
             
             try {
-                // Fetch all four leagues separately with cache busting
+                // Always fetch both leagues separately
                 console.log('🔄 Henter Premier League kampe...');
-                const premierResponse = await fetch(`/api/matches?league=premier&days=30&t=${Date.now()}`);
+                const premierResponse = await fetch('/api/matches?league=premier&days=30');
                 
                 console.log('🔄 Henter Superligaen kampe...');
-                const superligaResponse = await fetch(`/api/matches?league=superliga&days=30&t=${Date.now()}`);
-                
-                console.log('🔄 Henter Champions League kampe...');
-                const championsResponse = await fetch(`/api/matches?league=champions&days=30&t=${Date.now()}`);
-                
-                console.log('🔄 Henter Conference League kampe...');
-                const conferenceResponse = await fetch(`/api/matches?league=conference&days=30&t=${Date.now()}`);
+                const superligaResponse = await fetch('/api/matches?league=superliga&days=30');
                 
                 let allMatches = [];
                 
@@ -445,161 +443,77 @@
                     }
                 }
                 
-                if (championsResponse.ok) {
-                    const championsData = await championsResponse.json();
-                    console.log('✅ Champions League kampe hentet:', championsData.matches?.length || 0);
-                    if (championsData.matches) {
-                        allMatches = allMatches.concat(championsData.matches.map(m => ({...m, league: 'Champions League'})));
-                    }
-                }
-                
-                if (conferenceResponse.ok) {
-                    const conferenceData = await conferenceResponse.json();
-                    console.log('✅ Conference League kampe hentet:', conferenceData.matches?.length || 0);
-                    if (conferenceData.matches) {
-                        allMatches = allMatches.concat(conferenceData.matches.map(m => ({...m, league: 'Conference League'})));
-                    }
-                }
-                
                 if (allMatches.length > 0) {
                     window.allMatches = allMatches;
-                    await loadRealData(allMatches);
+                    loadRealData(allMatches);
                 } else {
-                    console.log('⚠️ Ingen kampe fundet - bruger demo data');
-                    await loadDemoData();
+                    console.log('⚠️ Ingen kampe fundet - viser fejlmeddelelse');
+                    showNoMatchesError();
                 }
                 
             } catch (error) {
                 console.error('❌ API fejl:', error);
-                await loadDemoData();
+                showApiError(error.message);
             }
         }
 
-        async function loadRealData(matches) {
+        function loadRealData(matches) {
             console.log('✅ Processerer rigtige kampe:', matches.length);
             
             if (matches.length === 0) {
-                await loadDemoData();
+                showNoMatchesError();
                 return;
             }
             
             // Sort by date
             matches.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            await displayMatches(matches);
+            displayMatches(matches);
         }
 
-        async function loadDemoData() {
-            console.log('🎮 Indlæser demo data...');
-            
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            const demoMatches = [
-                {
-                    id: 'demo1',
-                    homeTeam: 'Liverpool',
-                    awayTeam: 'Manchester United',
-                    date: tomorrow.toISOString(),
-                    venue: 'Anfield',
-                    league: 'Premier League',
-                    round: 'Regular Season - 23'
-                },
-                {
-                    id: 'demo2',
-                    homeTeam: 'FC København',
-                    awayTeam: 'Brøndby IF',
-                    date: new Date(tomorrow.getTime() + 24*60*60*1000).toISOString(),
-                    venue: 'Parken',
-                    league: 'Superligaen',
-                    round: 'Regular Season - 18'
-                },
-                {
-                    id: 'demo3',
-                    homeTeam: 'Arsenal',
-                    awayTeam: 'Chelsea',
-                    date: new Date(tomorrow.getTime() + 2*24*60*60*1000).toISOString(),
-                    venue: 'Emirates Stadium',
-                    league: 'Premier League',
-                    round: 'Regular Season - 24'
-                },
-                {
-                    id: 'demo4',
-                    homeTeam: 'FC Midtjylland',
-                    awayTeam: 'AGF Aarhus',
-                    date: new Date(tomorrow.getTime() + 3*24*60*60*1000).toISOString(),
-                    venue: 'MCH Arena',
-                    league: 'Superligaen',
-                    round: 'Regular Season - 19'
-                },
-                {
-                    id: 'demo5',
-                    homeTeam: 'Manchester City',
-                    awayTeam: 'Tottenham',
-                    date: new Date(tomorrow.getTime() + 4*24*60*60*1000).toISOString(),
-                    venue: 'Etihad Stadium',
-                    league: 'Premier League',
-                    round: 'Regular Season - 25'
-                },
-                {
-                    id: 'demo6',
-                    homeTeam: 'Brighton',
-                    awayTeam: 'Newcastle United',
-                    date: new Date(tomorrow.getTime() + 6*24*60*60*1000).toISOString(),
-                    venue: 'Amex Stadium',
-                    league: 'Premier League',
-                    round: 'Regular Season - 26'
-                }
-            ];
-            
-            window.allMatches = demoMatches;
-            await displayMatches(demoMatches);
+        function showNoMatchesError() {
+            const container = document.getElementById('matchesContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <p style="color: #e74c3c;">❌ Ingen kampe fundet for de næste 30 dage.</p>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7;">Dette kan skyldes vinterpausen eller API problemer.</p>
+                </div>
+            `;
+        }
+
+        function showApiError(errorMessage) {
+            const container = document.getElementById('matchesContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <p style="color: #e74c3c;">❌ Fejl ved hentning af kampe</p>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7;">Fejl: ${errorMessage}</p>
+                </div>
+            `;
         }
 
         async function displayMatches(matches) {
             const container = document.getElementById('matchesContainer');
             
             if (matches.length === 0) {
-                container.innerHTML = `
-                    <div class="loading">
-                        <p>Ingen kampe fundet for de næste 30 dage.</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7;">Dette kan skyldes vinterpausen eller tekniske problemer.</p>
-                    </div>
-                `;
+                showNoMatchesError();
                 return;
             }
             
-            // Process matches one by one to handle async team stats
-            const matchElements = [];
-            
-            for (const match of matches) {
+            // Generate cards with loading placeholders for stats
+            const cardsHtml = matches.map(match => {
                 const matchDate = new Date(match.date);
                 const today = new Date();
                 const daysUntilMatch = Math.ceil((matchDate - today) / (1000 * 60 * 60 * 24));
-                
-                console.log(`🔄 Processing match: ${match.homeTeam} vs ${match.awayTeam}`);
-                
-                // Fetch team stats asynchronously
-                const homeStats = await generateTeamStats(match.homeTeam);
-                const awayStats = await generateTeamStats(match.awayTeam);
                 
                 const showAnalysis = daysUntilMatch <= 3;
                 
                 let analysisContent = '';
                 if (showAnalysis) {
-                    const analysis = generateMatchAnalysis(match.homeTeam, match.awayTeam, homeStats, awayStats);
                     analysisContent = `
                         <div class="analysis-section">
                             <div class="analysis-title">🎯 Ekspert Analyse</div>
-                            <div class="analysis-content">${analysis.text}</div>
-                            <div class="prediction-box">
-                                <div class="prediction-title">Min 1X2 Vurdering</div>
-                                <div class="prediction-result">${analysis.prediction}</div>
-                                <div class="confidence">Sikkerhed: ${analysis.confidence}%</div>
-                            </div>
-                            <div class="score-guess">
-                                <strong>Mit scoregæt:</strong> ${analysis.score} (baseret på statistisk sandsynlighed og kampform)
-                            </div>
+                            <div class="analysis-content">Analyse baseret på live statistikker - henter data...</div>
+                            <div class="pending-analysis">🔄 Analyserer live data...</div>
                         </div>
                     `;
                 } else {
@@ -610,8 +524,8 @@
                     `;
                 }
                 
-                const matchElement = `
-                    <div class="match-card" onclick="quickPredict('${match.homeTeam}', '${match.awayTeam}')">
+                return `
+                    <div class="match-card" data-match-id="${match.id}">
                         <div class="match-header">
                             <div class="match-teams">${match.homeTeam} vs ${match.awayTeam}</div>
                             <div class="match-info">
@@ -630,104 +544,176 @@
                         <div class="team-stats">
                             <div class="team-stat">
                                 <div class="team-name">🏠 ${match.homeTeam}</div>
-                                ${homeStats.error ? 
-                                    `<div style="color: #e74c3c; font-size: 0.9rem; padding: 1rem; text-align: center;">
-                                        ❌ ${homeStats.errorMessage}
-                                    </div>` :
-                                    `<div class="form-display">
-                                        ${homeStats.form.map(result => 
-                                            `<div class="form-result ${result}">${result}</div>`
-                                        ).join('')}
-                                    </div>
-                                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
-                                        Mål: ${homeStats.goalsFor}-${homeStats.goalsAgainst} | Boldholdelse: ${homeStats.possession}%
-                                        ${homeStats.isRealData ? '<span style="color: #27ae60; font-size: 0.8rem;">📊 Live data</span>' : '<span style="color: #e74c3c; font-size: 0.8rem;">❌ Data fejl</span>'}
-                                    </div>`
-                                }
+                                <div class="form-display" id="home-form-${match.id}">
+                                    <div style="color: #b8b8b8;">🔄 Henter form...</div>
+                                </div>
+                                <div id="home-stats-${match.id}" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                    🔄 Henter statistikker...
+                                </div>
                             </div>
                             <div class="team-stat">
                                 <div class="team-name">✈️ ${match.awayTeam}</div>
-                                ${awayStats.error ? 
-                                    `<div style="color: #e74c3c; font-size: 0.9rem; padding: 1rem; text-align: center;">
-                                        ❌ ${awayStats.errorMessage}
-                                    </div>` :
-                                    `<div class="form-display">
-                                        ${awayStats.form.map(result => 
-                                            `<div class="form-result ${result}">${result}</div>`
-                                        ).join('')}
-                                    </div>
-                                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
-                                        Mål: ${awayStats.goalsFor}-${awayStats.goalsAgainst} | Boldholdelse: ${awayStats.possession}%
-                                        ${awayStats.isRealData ? '<span style="color: #27ae60; font-size: 0.8rem;">📊 Live data</span>' : '<span style="color: #e74c3c; font-size: 0.8rem;">❌ Data fejl</span>'}
-                                    </div>`
-                                }
+                                <div class="form-display" id="away-form-${match.id}">
+                                    <div style="color: #b8b8b8;">🔄 Henter form...</div>
+                                </div>
+                                <div id="away-stats-${match.id}" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                    🔄 Henter statistikker...
+                                </div>
                             </div>
                         </div>
                         
                         ${analysisContent}
                     </div>
                 `;
-                
-                matchElements.push(matchElement);
-            }
+            }).join('');
             
-            container.innerHTML = matchElements.join('');
+            container.innerHTML = cardsHtml;
+            
+            // Now load real stats for each team
+            for (const match of matches) {
+                await loadTeamStats(match.homeTeam, match.league, `home`, match.id);
+                await loadTeamStats(match.awayTeam, match.league, `away`, match.id);
+            }
         }
 
-        async function generateTeamStats(teamName) {
-            console.log(`🔍 Fetching LIVE data for: ${teamName}`);
+        async function loadTeamStats(teamName, league, side, matchId) {
+            try {
+                const leagueParam = league === 'Premier League' ? 'premier' : 'superliga';
+                const response = await fetch(`/api/teamstats?teamName=${encodeURIComponent(teamName)}&league=${leagueParam}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API fejl: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                let formHtml = '';
+                let statsHtml = '';
+                
+                if (data.success && data.statistics) {
+                    // Extract real form from recent fixtures
+                    const form = extractRealForm(data.recentFixtures);
+                    formHtml = form.map(result => 
+                        `<div class="form-result ${result}">${result}</div>`
+                    ).join('');
+                    
+                    const goalsFor = data.statistics.goals?.for?.total?.total || 'N/A';
+                    const goalsAgainst = data.statistics.goals?.against?.total?.total || 'N/A';
+                    const possession = data.statistics.ball_possession || 'N/A';
+                    
+                    statsHtml = `Mål: ${goalsFor}-${goalsAgainst} | Boldholdelse: ${possession}%`;
+                } else {
+                    // Show error instead of dummy data
+                    formHtml = Array(5).fill('<div class="form-result ERROR">❌</div>').join('');
+                    statsHtml = '<span class="error-message">❌ Live data ikke tilgængelig</span>';
+                }
+                
+                // Update the specific team stats
+                const formElement = document.getElementById(`${side}-form-${matchId}`);
+                const statsElement = document.getElementById(`${side}-stats-${matchId}`);
+                
+                if (formElement) formElement.innerHTML = formHtml;
+                if (statsElement) statsElement.innerHTML = statsHtml;
+                
+            } catch (error) {
+                console.error(`Fejl ved hentning af statistikker for ${teamName}:`, error);
+                
+                // Show error message instead of dummy data
+                const formElement = document.getElementById(`${side}-form-${matchId}`);
+                const statsElement = document.getElementById(`${side}-stats-${matchId}`);
+                
+                if (formElement) {
+                    formElement.innerHTML = Array(5).fill('<div class="form-result ERROR">❌</div>').join('');
+                }
+                if (statsElement) {
+                    statsElement.innerHTML = '<span class="error-message">❌ Fejl ved hentning af data</span>';
+                }
+            }
+        }
+
+        function extractRealForm(recentFixtures) {
+            if (!recentFixtures || recentFixtures.length === 0) {
+                return ['?', '?', '?', '?', '?'];
+            }
+            
+            return recentFixtures.slice(0, 5).map(fixture => {
+                const homeGoals = fixture.goals?.home;
+                const awayGoals = fixture.goals?.away;
+                
+                if (homeGoals === null || awayGoals === null) {
+                    return '?';
+                }
+                
+                if (homeGoals > awayGoals) {
+                    return 'W';
+                } else if (homeGoals < awayGoals) {
+                    return 'L';
+                } else {
+                    return 'D';
+                }
+            });
+        }
+
+        function filterLeague(league) {
+            console.log('🔍 Filtrerer til liga:', league);
+            
+            if (!window.allMatches) {
+                console.log('⚠️ Ingen kampe data tilgængelig');
+                return;
+            }
+            
+            let filteredMatches = window.allMatches;
+            
+            if (league === 'premier') {
+                filteredMatches = window.allMatches.filter(m => m.league === 'Premier League');
+                console.log('Premier League kampe:', filteredMatches.length);
+            } else if (league === 'superliga') {
+                filteredMatches = window.allMatches.filter(m => m.league === 'Superligaen');
+                console.log('Superligaen kampe:', filteredMatches.length);
+            }
+            
+            displayMatches(filteredMatches);
+            
+            // Update filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`button[onclick="filterLeague('${league}')"]`).classList.add('active');
+        }
+
+        // Debug function to test API directly
+        async function testApiDirectly() {
+            const debugOutput = document.getElementById('debugOutput');
+            debugOutput.innerHTML = '🔄 Tester API...';
             
             try {
-                // Determine league based on team name - IMPROVED DETECTION
-                let league = 'premier';
-                const teamLower = teamName.toLowerCase();
+                console.log('🔍 Testing matches API...');
+                const matchesResponse = await fetch('/api/matches?league=premier&days=30');
+                const matchesText = await matchesResponse.text();
                 
-                // Danish teams (including Copenhagen variants)
-                if (teamLower.includes('københavn') || teamLower.includes('copenhagen') || teamLower.includes('fck') ||
-                    teamLower.includes('midtjylland') || teamLower.includes('brøndby') || teamLower.includes('agf') ||
-                    teamLower.includes('silkeborg') || teamLower.includes('nordsjælland') || teamLower.includes('randers') ||
-                    teamLower.includes('viborg') || teamLower.includes('odense') || teamLower.includes('aalborg') ||
-                    teamLower.includes('vejle') || teamLower.includes('sønderjyske')) {
-                    league = 'superliga';
-                    console.log(`📍 Detected Danish team: ${teamName} → Superliga`);
-                }
-                // Champions League teams (including qualifying teams)
-                else if (teamLower.includes('malmo') || teamLower.includes('malmö') || teamLower.includes('qarabag') ||
-                        teamLower.includes('shkendija') || teamLower.includes('real madrid') || teamLower.includes('barcelona') ||
-                        teamLower.includes('bayern') || teamLower.includes('psg') || teamLower.includes('inter') ||
-                        teamLower.includes('milan') || teamLower.includes('juventus') || teamLower.includes('atletico') ||
-                        teamLower.includes('dortmund') || teamLower.includes('red star') || teamLower.includes('dinamo')) {
-                    league = 'champions';
-                    console.log(`📍 Detected Champions League team: ${teamName} → Champions`);
-                }
+                console.log('🔍 Testing teamstats API...');
+                const statsResponse = await fetch('/api/teamstats?teamName=Liverpool&league=premier');
+                const statsText = await statsResponse.text();
                 
-                console.log(`🎯 Using league: ${league} for team: ${teamName}`);
+                debugOutput.innerHTML = `
+                    <strong>Matches API Response:</strong><br>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">${matchesText.substring(0, 500)}...</pre>
+                    <strong>TeamStats API Response:</strong><br>
+                    <pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">${statsText.substring(0, 500)}...</pre>
+                `;
                 
-                // Fetch real stats from API
-                const response = await fetch(`/api/teamstats?teamName=${encodeURIComponent(teamName)}&league=${league}&t=${Date.now()}`);
+                console.log('Matches API response:', matchesText);
+                console.log('TeamStats API response:', statsText);
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(`✅ API Response for ${teamName}:`, data);
-                    
-                    if (data.stats && data.form && data.form.length > 0) {
-                        console.log(`🎉 LIVE DATA found for ${teamName}: Form=${data.form.join('')}, Goals=${data.stats.goalsFor}-${data.stats.goalsAgainst}`);
-                        return {
-                            form: data.form,
-                            goalsFor: data.stats.goalsFor || 0,
-                            goalsAgainst: data.stats.goalsAgainst || 0,
-                            possession: Math.round(data.stats.possession || 50),
-                            matchesPlayed: data.stats.matchesPlayed || 0,
-                            wins: data.stats.wins || 0,
-                            draws: data.stats.draws || 0,
-                            losses: data.stats.losses || 0,
-                            isRealData: true
-                        };
-                    } else {
-                        console.log(`⚠️ API returned incomplete data for ${teamName}:`, data);
-                    }
-                } else {
-                    console.log(`❌ API request failed for ${teamName}: ${response.status}`);
-                }
             } catch (error) {
-                console.error(`❌ Error fetching
+                debugOutput.innerHTML = `❌ Fejl: ${error.message}`;
+                console.error('API test error:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Fodbold Ekspert Platform startet');
+            testApiConnection();
+        });
+    </script>
+</body>
+</html>

@@ -1,320 +1,151 @@
-// api/matches.js - Serverless function til at hente fixtures
-export default async function handler(req, res) {
-  // Enable CORS
+// api/matches.js - Komplet kode til Vercel Serverless
+
+module.exports = async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  const { league = 'premier', days = 30 } = req.query;
-  
-  // Calculate date range
-  const today = new Date().toISOString().split('T')[0];
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + parseInt(days));
-  const endDateStr = endDate.toISOString().split('T')[0];
-
-  console.log(`API call for league: ${league}, from: ${today} to: ${endDateStr}`);
-
-  // League mapping with CORRECT IDs - ADDED Champions League and Conference League
-  const leagueConfig = {
-    'premier': { id: 39, country: 'England', name: 'Premier League' },
-    'superliga': { id: 119, country: 'Denmark', name: 'Superliga' },
-    'champions': { id: 2, country: 'World', name: 'UEFA Champions League' },
-    'conference': { id: 848, country: 'World', name: 'UEFA Conference League' }
-  };
-
-  const config = leagueConfig[league];
-  if (!config) {
-    return res.status(400).json({ error: 'Invalid league parameter' });
-  }
-
-  if (!process.env.API_FOOTBALL_KEY || !process.env.API_FOOTBALL_HOST) {
-    console.log('Missing API credentials, using demo data');
-    return res.status(200).json({
-      matches: [],
-      message: 'Demo mode - API credentials not configured'
-    });
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
-    // Try multiple seasons and approaches for Danish Superliga 
-    const currentYear = new Date().getFullYear(); 
-    // Based on API-Football data: Danish 2025-26 season runs from 2025-07-18 to 2026-03-01
-    const seasons = [2025, currentYear, currentYear - 1]; // Try 2025 (current Danish season), then others
+    const { league } = req.query;
     
-    let fixtures = [];
-    
-    for (const season of seasons) {
-      // Try different approaches - prioritize season 2025 for Danish Superliga
-      const apiUrls = config.id === 271 ? [
-        // Danish Superliga: Season 2025 is the current season (2025-07-18 to 2026-03-01)
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=2025&from=${today}&to=${endDateStr}`,
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=2025&next=15`,
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=2025&status=NS`,
-        // Fallback to other seasons
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=${season}&from=${today}&to=${endDateStr}`
-      ] : [
-        // Premier League: Standard approach
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=${season}&from=${today}&to=${endDateStr}`,
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=${season}&next=10`,
-        `https://${process.env.API_FOOTBALL_HOST}/fixtures?league=${config.id}&season=${season}`
-      ];
+    // Environment variables
+    const API_KEY = process.env.API_FOOTBALL_KEY;
+    const API_HOST = process.env.API_FOOTBALL_HOST;
+
+    if (!API_KEY || !API_HOST) {
+      res.status(500).json({ error: 'Missing API configuration' });
+      return;
+    }
+
+    // Liga konfiguration
+    const leagueConfig = {
+      'premier': { id: 39, country: 'England', name: 'Premier League' },
+      'superliga': { id: 119, country: 'Denmark', name: 'Superliga' },
+      'champions': { id: 2, country: 'World', name: 'UEFA Champions League' },
+      'conference': { id: 848, country: 'World', name: 'UEFA Conference League' }
+    };
+
+    // Danske hold whitelist for superliga filtering
+    const danishTeams = [
+      'FC København', 'FC Midtjylland', 'Brøndby IF', 'AGF Aarhus',
+      'Silkeborg IF', 'FC Nordsjælland', 'Randers FC', 'Viborg FF',
+      'OB Odense', 'AaB Aalborg', 'Vejle BK', 'SønderjyskE'
+    ];
+
+    let allMatches = [];
+
+    if (league && leagueConfig[league]) {
+      // Specifik liga
+      const config = leagueConfig[league];
+      const season = '2024';
       
-      for (const apiUrl of apiUrls) {
-        console.log(`Trying ${config.name} season ${season}:`, apiUrl);
-        
+      const apiUrl = `https://${API_HOST}/fixtures?league=${config.id}&season=${season}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': API_KEY,
+          'X-RapidAPI-Host': API_HOST
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      let matches = data.response || [];
+
+      // Filter danske kampe for superliga
+      if (league === 'superliga') {
+        matches = matches.filter(match => {
+          const homeTeam = match.teams?.home?.name || '';
+          const awayTeam = match.teams?.away?.name || '';
+          return danishTeams.some(team => 
+            homeTeam.includes(team) || awayTeam.includes(team)
+          );
+        });
+      }
+
+      allMatches = matches;
+
+    } else {
+      // Alle ligaer
+      const season = '2024';
+      
+      for (const [leagueKey, config] of Object.entries(leagueConfig)) {
         try {
+          const apiUrl = `https://${API_HOST}/fixtures?league=${config.id}&season=${season}`;
+          
           const response = await fetch(apiUrl, {
+            method: 'GET',
             headers: {
-              'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-              'x-rapidapi-host': process.env.API_FOOTBALL_HOST
+              'X-RapidAPI-Key': API_KEY,
+              'X-RapidAPI-Host': API_HOST
             }
           });
 
           if (response.ok) {
             const data = await response.json();
-            console.log(`${config.name} season ${season} response:`, data.response?.length || 0, 'fixtures found');
-            
-            if (data.response && data.response.length > 0) {
-              console.log(`Raw API response for ${config.name}:`, data.response.map(f => ({
-                home: f.teams.home.name,
-                away: f.teams.away.name,
-                leagueId: f.league.id,
-                leagueName: f.league.name,
-                country: f.league.country,
-                date: f.fixture.date
-              })));
-              
-              let seasonFixtures = [];
-              
-              if (config.id === 119) {
-                // DANISH SUPERLIGA (ID 119): Strict team name filtering
-                const knownDanishTeams = [
-                  'fc københavn', 'fc kopenhagen', 'copenhagen',
-                  'fc midtjylland', 'midtjylland',
-                  'brøndby', 'brondby', 'brøndby if',
-                  'agf', 'agf aarhus', 'aarhus',
-                  'silkeborg', 'silkeborg if',
-                  'fc nordsjælland', 'nordsjaelland', 'nordsjælland',
-                  'randers', 'randers fc',
-                  'viborg', 'viborg ff',
-                  'ob', 'ob odense', 'odense',
-                  'aab', 'aalborg', 'aab aalborg',
-                  'vejle', 'vejle bk',
-                  'sønderjyske', 'sonderjyske', 'sønderjyskE'
-                ];
-                
-                seasonFixtures = data.response.filter(fixture => {
-                  const homeTeam = fixture.teams.home.name.toLowerCase();
-                  const awayTeam = fixture.teams.away.name.toLowerCase();
-                  
-                  // Check if BOTH teams are known Danish teams
-                  const isHomeDanish = knownDanishTeams.some(team => 
-                    homeTeam.includes(team) || team.includes(homeTeam.split(' ')[0])
-                  );
-                  const isAwayDanish = knownDanishTeams.some(team => 
-                    awayTeam.includes(team) || team.includes(awayTeam.split(' ')[0])
-                  );
-                  
-                  const isCorrectLeague = fixture.league.id === config.id;
-                  const matchDate = new Date(fixture.fixture.date);
-                  const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
-                  
-                  const isValidDanishMatch = isCorrectLeague && isUpcoming && isHomeDanish && isAwayDanish;
-                  
-                  console.log(`DANISH FILTER: ${fixture.teams.home.name} vs ${fixture.teams.away.name}`);
-                  console.log(`- Home Danish: ${isHomeDanish}, Away Danish: ${isAwayDanish}, Valid: ${isValidDanishMatch}`);
-                  
-                  return isValidDanishMatch;
-                });
-                
-              } else if (config.id === 2 || config.id === 848) {
-                // CHAMPIONS LEAGUE & CONFERENCE LEAGUE: European filtering
-                seasonFixtures = data.response.filter(fixture => {
-                  const isCorrectLeague = fixture.league.id === config.id;
-                  const matchDate = new Date(fixture.fixture.date);
-                  const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
-                  
-                  // European competitions should have teams from multiple countries
-                  const isValid = isCorrectLeague && isUpcoming;
-                  
-                  console.log(`EUROPEAN FILTER: ${fixture.teams.home.name} vs ${fixture.teams.away.name} - Valid: ${isValid}`);
-                  
-                  return isValid;
-                });
-              } else {
-                // PREMIER LEAGUE: Standard filtering (trust the API)
-                seasonFixtures = data.response.filter(fixture => {
-                  const isCorrectLeague = fixture.league.id === config.id;
-                  const isCorrectCountry = fixture.league.country === config.country;
-                  const matchDate = new Date(fixture.fixture.date);
-                  const isUpcoming = matchDate >= new Date(today) || ['NS', 'TBD', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT'].includes(fixture.fixture.status.short);
-                  
-                  const isValid = isCorrectLeague && isCorrectCountry && isUpcoming;
-                  
-                  console.log(`PREMIER FILTER: ${fixture.teams.home.name} vs ${fixture.teams.away.name} - Valid: ${isValid}`);
-                  
-                  return isValid;
-                });
-              }
-              
-              fixtures = fixtures.concat(seasonFixtures);
-              if (fixtures.length >= 10) break; // Stop if we have enough matches
+            let matches = data.response || [];
+
+            // Filter danske kampe for superliga
+            if (leagueKey === 'superliga') {
+              matches = matches.filter(match => {
+                const homeTeam = match.teams?.home?.name || '';
+                const awayTeam = match.teams?.away?.name || '';
+                return danishTeams.some(team => 
+                  homeTeam.includes(team) || awayTeam.includes(team)
+                );
+              });
             }
-          } else {
-            console.log(`API request failed for ${config.name} season ${season}:`, response.status, response.statusText);
-          }
-        } catch (urlError) {
-          console.log(`Error with URL ${apiUrl}:`, urlError.message);
-        }
-        
-        if (fixtures.length >= 5) break; // Break early if we found some matches
-      }
-      
-      if (fixtures.length >= 5) break; // Break season loop if we found enough matches
-    }
 
-    // If still no Danish fixtures found, fetch real teams and create realistic fixtures
-    if (fixtures.length === 0 && config.id === 119) {
-      console.log('No Danish fixtures from API - fetching real teams to create realistic fixtures...');
-      
-      try {
-        // Fetch real Danish teams first
-        const teamsResponse = await fetch(`https://${process.env.API_FOOTBALL_HOST}/teams?league=119&season=${currentYear}`, {
-          headers: {
-            'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-            'x-rapidapi-host': process.env.API_FOOTBALL_HOST
-          }
-        });
-        
-        let danishTeams = [];
-        
-        if (teamsResponse.ok) {
-          const teamsData = await teamsResponse.json();
-          if (teamsData.response && teamsData.response.length > 0) {
-            danishTeams = teamsData.response.map(item => ({
-              name: item.team.name,
-              venue: item.venue.name || 'TBA'
+            // Tilføj liga info til hver kamp
+            matches = matches.map(match => ({
+              ...match,
+              leagueInfo: config
             }));
-            console.log(`Fetched ${danishTeams.length} real Danish teams from API`);
+
+            allMatches = allMatches.concat(matches);
           }
+        } catch (error) {
+          console.error(`Error fetching ${leagueKey}:`, error);
+          // Continue med andre ligaer selvom en fejler
         }
-        
-        // Fallback to known Danish teams if API doesn't work
-        if (danishTeams.length === 0) {
-          danishTeams = [
-            { name: 'FC København', venue: 'Parken' },
-            { name: 'FC Midtjylland', venue: 'MCH Arena' },
-            { name: 'Brøndby IF', venue: 'Brøndby Stadion' },
-            { name: 'AGF Aarhus', venue: 'Ceres Park' },
-            { name: 'Silkeborg IF', venue: 'JYSK Park' },
-            { name: 'FC Nordsjælland', venue: 'Right to Dream Park' },
-            { name: 'Randers FC', venue: 'Cepheus Park Randers' },
-            { name: 'Viborg FF', venue: 'Energi Viborg Arena' },
-            { name: 'OB Odense', venue: 'Nature Energy Park' },
-            { name: 'AaB Aalborg', venue: 'Aalborg Portland Park' },
-            { name: 'Vejle BK', venue: 'Vejle Stadion' },
-            { name: 'SønderjyskE', venue: 'Sydbank Park' }
-          ];
-          console.log('Using DANISH fallback teams list - NO HUNGARIAN TEAMS!');
-        }
-        
-        // Create GUARANTEED Danish matchups (no random selection to avoid confusion)
-        const guaranteedDanishMatchups = [
-          { home: 'FC København', away: 'Brøndby IF', venue: 'Parken' },
-          { home: 'FC Midtjylland', away: 'AGF Aarhus', venue: 'MCH Arena' },
-          { home: 'Silkeborg IF', away: 'FC Nordsjælland', venue: 'JYSK Park' },
-          { home: 'Randers FC', away: 'Viborg FF', venue: 'Cepheus Park Randers' },
-          { home: 'OB Odense', away: 'AaB Aalborg', venue: 'Nature Energy Park' },
-          { home: 'Vejle BK', away: 'SønderjyskE', venue: 'Vejle Stadion' }
-        ];
-        
-        // Convert to fixture format - GUARANTEE DANISH TEAMS ONLY
-        fixtures = guaranteedDanishMatchups.map((match, index) => ({
-          fixture: {
-            id: 999000 + index,
-            date: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000 + Math.random() * 12 * 60 * 60 * 1000).toISOString(),
-            venue: { name: match.venue },
-            status: { short: 'NS' }
-          },
-          teams: {
-            home: { name: match.home },
-            away: { name: match.away }
-          },
-          league: {
-            id: 119,
-            name: 'Superliga',
-            country: 'Denmark',
-            round: `Regular Season - ${Math.floor(Math.random() * 10) + 18}`
-          }
-        }));
-        
-        console.log(`Created ${fixtures.length} realistic Danish fixtures with real teams`);
-        
-      } catch (teamError) {
-        console.log('Error fetching teams, using basic demo fixtures:', teamError.message);
-        
-        // Final fallback to basic demo data
-        fixtures = [{
-          fixture: {
-            id: 999001,
-            date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            venue: { name: 'Parken' },
-            status: { short: 'NS' }
-          },
-          teams: {
-            home: { name: 'FC København' },
-            away: { name: 'Brøndby IF' }
-          },
-          league: {
-            id: 119,
-            name: 'Superliga',
-            country: 'Denmark',
-            round: 'Regular Season - 20'
-          }
-        }];
       }
     }
-    const matches = fixtures.slice(0, 10).map(fixture => ({
-      id: fixture.fixture.id,
-      date: fixture.fixture.date,
-      homeTeam: fixture.teams.home.name,
-      awayTeam: fixture.teams.away.name,
-      venue: fixture.fixture.venue?.name || 'TBA',
-      round: fixture.league.round || 'TBA',
-      league: config.name,
-      country: config.country,
-      status: fixture.fixture.status.short
-    }));
 
-    console.log(`Processed ${matches.length} ${config.name} matches`);
+    // Sorter kampe efter dato
+    allMatches.sort((a, b) => {
+      const dateA = new Date(a.fixture?.date || 0);
+      const dateB = new Date(b.fixture?.date || 0);
+      return dateA - dateB;
+    });
 
-    return res.status(200).json({
-      matches: matches,
-      league: config.name,
-      total: matches.length,
-      debug: {
-        seasonsChecked: seasons,
-        originalFixtures: fixtures.length,
-        processedMatches: matches.length
-      }
+    // Return response
+    res.status(200).json({
+      success: true,
+      count: allMatches.length,
+      league: league || 'all',
+      matches: allMatches
     });
 
   } catch (error) {
-    console.error(`Error fetching ${config.name} fixtures:`, error.message);
-    
-    return res.status(200).json({
-      matches: [],
-      error: error.message,
-      league: config.name,
-      debug: {
-        errorType: 'API_ERROR',
-        message: error.message
-      }
+    console.error('API Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch matches', 
+      details: error.message 
     });
   }
-}
+};

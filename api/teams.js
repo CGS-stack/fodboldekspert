@@ -1,6 +1,7 @@
-// api/teams.js - Serverless function til at hente hold data og statistikker
-export default async function handler(req, res) {
-  // Enable CORS
+// api/teams.js - Komplet kode til Vercel Serverless
+
+module.exports = async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -11,162 +12,153 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
-    const { league, teamId } = req.query;
+    const { league, search } = req.query;
     
-    // League mapping
-    const leagueIds = {
-      'premier': 39,
-      'superliga': 271
-    };
+    // Environment variables
+    const API_KEY = process.env.API_FOOTBALL_KEY;
+    const API_HOST = process.env.API_FOOTBALL_HOST;
 
-    const leagueId = leagueIds[league];
-    if (!leagueId) {
-      return res.status(400).json({ error: 'Invalid league parameter' });
+    if (!API_KEY || !API_HOST) {
+      res.status(500).json({ error: 'Missing API configuration' });
+      return;
     }
 
-    if (!teamId) {
-      // Get all teams in league
-      const endpoint = `https://v3.football.api-sports.io/teams?league=${leagueId}&season=2024`;
+    // Liga konfiguration
+    const leagueConfig = {
+      'premier': { id: 39, country: 'England', name: 'Premier League' },
+      'superliga': { id: 119, country: 'Denmark', name: 'Superliga' },
+      'champions': { id: 2, country: 'World', name: 'UEFA Champions League' },
+      'conference': { id: 848, country: 'World', name: 'UEFA Conference League' }
+    };
+
+    // Danske hold whitelist
+    const danishTeams = [
+      'FC København', 'FC Midtjylland', 'Brøndby IF', 'AGF Aarhus',
+      'Silkeborg IF', 'FC Nordsjælland', 'Randers FC', 'Viborg FF',
+      'OB Odense', 'AaB Aalborg', 'Vejle BK', 'SønderjyskE'
+    ];
+
+    let allTeams = [];
+
+    if (league && leagueConfig[league]) {
+      // Specifik liga
+      const config = leagueConfig[league];
+      const season = '2024';
       
-      const response = await fetch(endpoint, {
+      let apiUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}`;
+      
+      // Tilføj search parameter hvis angivet
+      if (search) {
+        apiUrl += `&search=${encodeURIComponent(search)}`;
+      }
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
-          'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-          'x-rapidapi-host': process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
+          'X-RapidAPI-Key': API_KEY,
+          'X-RapidAPI-Host': API_HOST
         }
       });
 
       if (!response.ok) {
-        throw new Error(`API-Football error: ${response.status}`);
+        throw new Error(`API call failed: ${response.status}`);
       }
 
       const data = await response.json();
+      let teams = data.response || [];
+
+      // Filter danske hold for superliga
+      if (league === 'superliga') {
+        teams = teams.filter(teamData => {
+          const teamName = teamData.team?.name || '';
+          return danishTeams.some(danishTeam => 
+            teamName.includes(danishTeam) || danishTeam.includes(teamName)
+          );
+        });
+      }
+
+      // Tilføj liga info til hvert hold
+      allTeams = teams.map(teamData => ({
+        ...teamData,
+        leagueInfo: config
+      }));
+
+    } else {
+      // Alle ligaer
+      const season = '2024';
       
-      const result = data.response?.map(item => ({
-        id: item.team.id,
-        name: item.team.name,
-        logo: item.team.logo,
-        country: item.team.country,
-        founded: item.team.founded,
-        venue: item.venue?.name
-      })) || [];
-
-      // Cache for 1 hour
-      res.setHeader('Cache-Control', 's-maxage=3600');
-      
-      return res.status(200).json({
-        success: true,
-        data: result
-      });
-    }
-
-    // Get specific team statistics and recent form
-    const [statsResponse, fixturesResponse] = await Promise.all([
-      // Get team statistics
-      fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueId}&season=2024&team=${teamId}`, {
-        headers: {
-          'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-          'x-rapidapi-host': process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
-        }
-      }),
-      // Get last 5 fixtures for form
-      fetch(`https://v3.football.api-sports.io/fixtures?team=${teamId}&last=5`, {
-        headers: {
-          'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
-          'x-rapidapi-host': process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
-        }
-      })
-    ]);
-
-    let stats = null;
-    let form = ['W', 'W', 'D', 'L', 'W']; // Default fallback
-
-    if (statsResponse.ok) {
-      const statsData = await statsResponse.json();
-      stats = statsData.response;
-    }
-
-    if (fixturesResponse.ok) {
-      const fixturesData = await fixturesResponse.json();
-      if (fixturesData.response && fixturesData.response.length > 0) {
-        // Generate form from last 5 matches
-        form = fixturesData.response.slice(0, 5).map(fixture => {
-          const homeTeam = fixture.teams.home.id;
-          const homeGoals = fixture.goals.home;
-          const awayGoals = fixture.goals.away;
+      for (const [leagueKey, config] of Object.entries(leagueConfig)) {
+        try {
+          let apiUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}`;
           
-          if (homeGoals === null || awayGoals === null) return 'D'; // Not played
-          
-          if (parseInt(teamId) === homeTeam) {
-            // Team played at home
-            if (homeGoals > awayGoals) return 'W';
-            if (homeGoals < awayGoals) return 'L';
-            return 'D';
-          } else {
-            // Team played away
-            if (awayGoals > homeGoals) return 'W';
-            if (awayGoals < homeGoals) return 'L';
-            return 'D';
+          // Tilføj search parameter hvis angivet
+          if (search) {
+            apiUrl += `&search=${encodeURIComponent(search)}`;
           }
-        }).reverse(); // Reverse to show oldest to newest
+          
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'X-RapidAPI-Key': API_KEY,
+              'X-RapidAPI-Host': API_HOST
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            let teams = data.response || [];
+
+            // Filter danske hold for superliga
+            if (leagueKey === 'superliga') {
+              teams = teams.filter(teamData => {
+                const teamName = teamData.team?.name || '';
+                return danishTeams.some(danishTeam => 
+                  teamName.includes(danishTeam) || danishTeam.includes(teamName)
+                );
+              });
+            }
+
+            // Tilføj liga info til hvert hold
+            teams = teams.map(teamData => ({
+              ...teamData,
+              leagueInfo: config
+            }));
+
+            allTeams = allTeams.concat(teams);
+          }
+        } catch (error) {
+          console.error(`Error fetching teams from ${leagueKey}:`, error);
+          // Continue med andre ligaer selvom en fejler
+        }
       }
     }
 
-    // Construct result
-    const result = {
-      team: stats?.team || { id: teamId, name: 'Unknown Team' },
-      form: form,
-      goals: {
-        for: stats?.goals?.for?.total?.total || Math.floor(Math.random() * 15) + 5,
-        against: stats?.goals?.against?.total?.total || Math.floor(Math.random() * 10) + 2
-      },
-      matches: {
-        played: stats?.fixtures?.played?.total || 20,
-        wins: stats?.fixtures?.wins?.total || Math.floor(Math.random() * 10) + 5,
-        draws: stats?.fixtures?.draws?.total || Math.floor(Math.random() * 5) + 2,
-        loses: stats?.fixtures?.loses?.total || Math.floor(Math.random() * 8) + 2
-      },
-      possession: `${stats?.goals?.for?.average || Math.floor(Math.random() * 20) + 45}%`,
-      cleanSheets: stats?.clean_sheet?.total || Math.floor(Math.random() * 6) + 2
-    };
+    // Sorter hold alfabetisk
+    allTeams.sort((a, b) => {
+      const nameA = a.team?.name || '';
+      const nameB = b.team?.name || '';
+      return nameA.localeCompare(nameB);
+    });
 
-    // Cache for 1 hour
-    res.setHeader('Cache-Control', 's-maxage=3600');
-    
+    // Return response
     res.status(200).json({
       success: true,
-      data: result
+      count: allTeams.length,
+      league: league || 'all',
+      search: search || null,
+      teams: allTeams
     });
 
   } catch (error) {
     console.error('Teams API Error:', error);
-    
-    // Fallback to demo data
-    const fallbackStats = {
-      team: { id: req.query.teamId || 0, name: 'Demo Team' },
-      form: ['W', 'L', 'D', 'W', 'W'],
-      goals: {
-        for: Math.floor(Math.random() * 15) + 8,
-        against: Math.floor(Math.random() * 10) + 3
-      },
-      matches: {
-        played: 20,
-        wins: Math.floor(Math.random() * 8) + 6,
-        draws: Math.floor(Math.random() * 4) + 2,
-        loses: Math.floor(Math.random() * 6) + 2
-      },
-      possession: `${Math.floor(Math.random() * 20) + 45}%`,
-      cleanSheets: Math.floor(Math.random() * 6) + 3
-    };
-
-    res.status(200).json({
-      success: true,
-      data: fallbackStats,
-      error: 'Using fallback data',
-      message: error.message
+    res.status(500).json({ 
+      error: 'Failed to fetch teams', 
+      details: error.message 
     });
   }
-}
+};

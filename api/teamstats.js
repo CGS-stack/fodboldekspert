@@ -1,25 +1,109 @@
-export default async function handler(req, res) {
-  // Enable CORS
+// ✅ KORREKT: api/teamstats.js til Vercel Serverless
+
+module.exports = async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  const { teamName, league = 'premier' } = req.query;
-  
-  if (!teamName) {
-    return res.status(400).json({ error: 'Team name is required' });
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
-  // For now, return error state to show "Live data ikke tilgængelig"
-  return res.status(200).json({
-    team: teamName,
-    error: 'API under udvikling',
-    stats: null,
-    lastMatches: [],
-    form: []
-  });
-}
+  try {
+    const { teamName, league } = req.query;
+    
+    if (!teamName) {
+      res.status(400).json({ error: 'teamName parameter required' });
+      return;
+    }
+
+    // Environment variables
+    const API_KEY = process.env.API_FOOTBALL_KEY;
+    const API_HOST = process.env.API_FOOTBALL_HOST;
+
+    if (!API_KEY || !API_HOST) {
+      res.status(500).json({ error: 'Missing API configuration' });
+      return;
+    }
+
+    // Liga konfiguration
+    const leagueConfig = {
+      'premier': { id: 39, country: 'England', name: 'Premier League' },
+      'superliga': { id: 119, country: 'Denmark', name: 'Superliga' },
+      'champions': { id: 2, country: 'World', name: 'UEFA Champions League' },
+      'conference': { id: 848, country: 'World', name: 'UEFA Conference League' }
+    };
+
+    const config = league ? leagueConfig[league] : leagueConfig.premier;
+    const season = '2024';
+
+    // Først find team ID
+    const teamsUrl = `https://${API_HOST}/teams?league=${config.id}&season=${season}&search=${encodeURIComponent(teamName)}`;
+    
+    const teamsResponse = await fetch(teamsUrl, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': API_KEY,
+        'X-RapidAPI-Host': API_HOST
+      }
+    });
+
+    if (!teamsResponse.ok) {
+      throw new Error(`Teams API call failed: ${teamsResponse.status}`);
+    }
+
+    const teamsData = await teamsResponse.json();
+    const teams = teamsData.response || [];
+    
+    if (teams.length === 0) {
+      res.status(404).json({ 
+        error: 'Team not found',
+        teamName: teamName,
+        league: league 
+      });
+      return;
+    }
+
+    const team = teams[0];
+    const teamId = team.team.id;
+
+    // Hent team statistikker
+    const statsUrl = `https://${API_HOST}/teams/statistics?league=${config.id}&season=${season}&team=${teamId}`;
+    
+    const statsResponse = await fetch(statsUrl, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': API_KEY,
+        'X-RapidAPI-Host': API_HOST
+      }
+    });
+
+    if (!statsResponse.ok) {
+      throw new Error(`Stats API call failed: ${statsResponse.status}`);
+    }
+
+    const statsData = await statsResponse.json();
+    
+    // Return response
+    res.status(200).json({
+      success: true,
+      team: team.team,
+      league: config,
+      statistics: statsData.response || null
+    });
+
+  } catch (error) {
+    console.error('Team Stats API Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch team statistics', 
+      details: error.message 
+    });
+  }
+};
